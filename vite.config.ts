@@ -21,7 +21,6 @@ export default defineConfig({
     },
     build: {
         // disable this for low bundle sizes
-        outDir: "../",
         sourcemap: false,
         rollupOptions: {
             output: {

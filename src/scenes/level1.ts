@@ -1,14 +1,22 @@
 import {createEnnemi} from "../entities/ennemi";
 import {createPlayer} from "../entities/player";
 
-function spawnEnnemi() {
-  createEnnemi("strandmon");
+let ennemiSpeed = 300;
 
-  wait(rand(1.5, 3.5), () => {
-    spawnEnnemi();
+function spawnEnnemis() {
+  createEnnemi("strandmon", ennemiSpeed);
+
+  wait(rand(450 / ennemiSpeed, 1050 / ennemiSpeed), () => {
+    spawnEnnemis();
   });
 }
 
+function updateSpeed() {
+  wait(5, () => {
+    ennemiSpeed += 10;
+    updateSpeed();
+  });
+}
 
 export function createLevel1Scene() {
   return scene("level1", () => {
@@ -18,13 +26,15 @@ export function createLevel1Scene() {
     add(["ground", rect(3 * width(), 20), body({isStatic: true}), pos(-width(), height() - 20), area(), color("#FF0000"), opacity(0)])
     const scoreboard = add([text(`Score: ${score}`), color("#000000"), pos(16, 16)])
 
-    const despawner = add(["despawner", rect(20, 3 * height()), body({isStatic: true}), pos(- 100, -height()), area(), color("#FF0000"), opacity(1)])
+    const despawner = add(["despawner", rect(20, 3 * height()), body({isStatic: true}), pos(-100, -height()), area(), color("#FF0000"), opacity(0)])
     despawner.onCollide("ennemi", (obj) => {
-      console.log("despawn");
       obj.destroy();
       if (obj.hit) return;
       score++;
       scoreboard.text = `Score: ${score}`;
+      if (score > 10) {
+        go("level2");
+      }
     });
 
 
@@ -32,13 +42,24 @@ export function createLevel1Scene() {
       {idle: "ollie", jump: "ollie_jump", hit: "ollie_hit", p: vec2(16, 520)}
     )
 
-    onKeyPress("space", () => {
+
+    function jumpAction() {
       if (player.isGrounded()) {
         player.tryJump()
       }
+    }
+    onKeyPress("space", () => {
+      jumpAction();
+    });
+    onClick(() => {
+      jumpAction();
+    });
+    onTouchStart(() => {
+      jumpAction();
     });
 
 
-    spawnEnnemi();
+    spawnEnnemis();
+    updateSpeed();
   });
 }

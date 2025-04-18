@@ -1,6 +1,6 @@
-import {Anchor, Vec2} from "kaplay";
+import {Anchor, Vec2, GameObj} from "kaplay";
 
-export function createPlayer({idle, jump, hit, p, anch}: {idle: string, jump?: string, hit: string, p: Vec2, anch?: Anchor}) {
+export function createPlayer({idle, jump, hit, p, anch, onEnnemiHit}: {idle: string, jump?: string, hit: string, p: Vec2, anch?: Anchor, onEnnemiHit?: (v: GameObj) => void}) {
   const res = add([
     "player",
     sprite(idle),
@@ -49,7 +49,7 @@ export function createPlayer({idle, jump, hit, p, anch}: {idle: string, jump?: s
       obj.hit = true;
       res.hit = true;
       res.sprite = hit;
-      // play("hit", {volume: 0.5});
+      play("hit", {volume: 0.5});
       shake();
       res.blink({
         duration: 2,
@@ -59,6 +59,7 @@ export function createPlayer({idle, jump, hit, p, anch}: {idle: string, jump?: s
           res.hit = false;
         }
       });
+      onEnnemiHit?.(obj);
     }
   });
 

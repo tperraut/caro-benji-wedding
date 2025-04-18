@@ -1,12 +1,21 @@
-export function createEnnemi(img: string) {
+import {Vec2, Anchor} from "kaplay"
+
+export function createEnnemi(
+  img: string,
+  speed: number = 300,
+  moveDirection: Vec2 = LEFT,
+  p: Vec2 = vec2(width(), height() - 20),
+  s: Vec2 = vec2(0.1, 0.1),
+  anch: Anchor = "botleft"
+) {
   const res = add([
     "ennemi",
     sprite(img),
-    scale(vec2(0.1, 0.1)),
-    pos(width(), height() - 20),
-    anchor("botleft"),
+    scale(s),
+    pos(p.x, p.y),
+    anchor(anch),
     area(),
-    move(LEFT, 300),
+    move(moveDirection, speed),
     {
       hit: false,
     }

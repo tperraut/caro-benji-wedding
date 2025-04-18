@@ -2,8 +2,8 @@ export function createStartScene() {
   return scene("start", () => {
     add([sprite("startBG")])
     const t = add([
-      text("Press SPACE to start"),
-      pos(center().x, 420), color("#000000"),
+      text("Tap to start"),
+      pos(center().x, height() - 120), color("#000000"),
       anchor("center"),
       animate(),
     ])
@@ -11,7 +11,13 @@ export function createStartScene() {
     t.animate("opacity", [0.5, 1, 0.5], {duration: 2})
 
     onKeyPress("space", () => {
-      go("level1")
+      go("level1");
+    });
+    onClick(() => {
+      go("level1");
+    });
+    onTouchStart(() => {
+      go("level1");
     });
   });
 }
