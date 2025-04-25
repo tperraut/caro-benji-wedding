@@ -1,8 +1,8 @@
 import kaplay from "kaplay";
 import "kaplay/global";
-import {createStartScene} from "./scenes/start";
 import {createLevel1Scene} from "./scenes/level1";
 import {createLevel2Scene} from "./scenes/level2";
+import {createInstructionsScene} from "./scenes/instructions";
 
 kaplay({
   width: 960,
@@ -12,14 +12,18 @@ kaplay({
   letterbox: true,
 });
 
-loadRoot("./"); // A good idea for Itch.io publishing later
-loadSprite("startBG", "sprites/heading.png");
-loadSprite("forest", "sprites/forest.png");
+loadSprite("startBG", "sprites/heading.jpg");
+loadSprite("level1", "sprites/level_1.jpg");
+loadSprite("level1BG", "sprites/jardin.jpg");
 loadSprite("ollie", "sprites/ollie_run.png");
 loadSprite("ollie_jump", "sprites/ollie_jump.png");
 loadSprite("ollie_hit", "sprites/ollie_hit.png");
-loadSprite("strandmon", "sprites/strandmon.png");
+loadSprite("duif", "sprites/duif.png");
+loadSprite("robot", "sprites/robot.png");
 
+
+loadSprite("level2", "sprites/level_2.jpg");
+loadSprite("level2BG", "sprites/cuisine.jpg");
 loadSprite("sakiro_idle", "sprites/sakiro_idle.png");
 loadSprite("sakiro_hit", "sprites/sakiro_hit.png");
 loadSprite("broccoli", "sprites/broccoli.png");
@@ -30,10 +34,13 @@ loadSprite("salami", "sprites/salami.png");
 loadSound("hit", "sounds/meow.wav");
 loadSound("eat", "sounds/pop.wav");
 
+
+loadSprite("level3", "sprites/level_3.jpg");
+
 setGravity(1000);
-createStartScene();
+createInstructionsScene();
 createLevel1Scene();
 createLevel2Scene();
 
-go("start");
+go("instructions", {asset: "startBG", sceneToGo: "instructions", isStart: true});
 // go("level2");

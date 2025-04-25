@@ -5,7 +5,7 @@ export function createEnnemi(
   speed: number = 300,
   moveDirection: Vec2 = LEFT,
   p: Vec2 = vec2(width(), height() - 20),
-  s: Vec2 = vec2(0.1, 0.1),
+  s: Vec2 = vec2(0.5, 0.5),
   anch: Anchor = "botleft"
 ) {
   const res = add([

@@ -15,7 +15,7 @@ export function createCoin(
   const res = add([
     "coin",
     sprite(coins[randi(0, coins.length)]),
-    scale(vec2(0.07, 0.07)),
+    scale(vec2(0.28, 0.28)),
     pos(p.x, p.y),
     anchor(anch),
     area({collisionIgnore: ["ground"]}),
