@@ -38,7 +38,7 @@ export function createLevel2Scene() {
         idle: "sakiro_idle", hit: "sakiro_hit", p: vec2(width() / 2, height()), anch: "bot", onEnnemiHit: (obj) => {
           obj.destroy();
           player.scale = vec2(clamp(player.scale.x - 0.1, 0.2, player.scale.x), clamp(player.scale.y - 0.1, 0.2, player.scale.y));
-          score = clamp(score - 10, 0, score);
+          score = clamp(score - 5, 0, score);
           scoreboard.text = `Score: ${score}`;
         }
       }
