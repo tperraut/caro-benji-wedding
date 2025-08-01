@@ -6,6 +6,9 @@ COPY . .
 RUN npm run build
 
 FROM busybox:stable AS runner
+
+EXPOSE 8080
+
 WORKDIR /app
 COPY --from=builder /app/dist .
 CMD ["busybox", "httpd", "-f", "-v", "-p", "8080"]
