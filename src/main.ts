@@ -8,7 +8,7 @@ import {createLevel3Scene} from "./scenes/level3";
 kaplay({
   width: 960,
   height: 540,
-  scale: 1,
+  scale: 2,
   stretch: true,
   letterbox: true,
   texFilter: "linear", // Use linear filtering for smoother scaling

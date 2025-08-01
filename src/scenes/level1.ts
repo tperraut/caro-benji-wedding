@@ -28,7 +28,7 @@ export function createLevel1Scene() {
     let score = 0
 
     add([pos(0, 0), rect(width(), height()), color("#FFFFFF")])
-    add(["background", sprite("level1BG")])
+    add(["background", sprite("level1BG"), scale(0.5)])
     add(["ground", rect(3 * width(), 20), body({isStatic: true}), pos(-width(), height() - 20), area(), color("#FF0000"), opacity(0)])
     const scoreboard = add([text(`Score: ${score}`), color("#000000"), pos(16, 16)])
 

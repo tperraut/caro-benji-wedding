@@ -1,13 +1,134 @@
+import {GameObj, Vec2} from "kaplay";
+
+const IS_DEBUG = false;
+
 function formatTime(seconds: number): string {
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = Math.floor(seconds % 60);
   return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
 }
 
+function drawHoles(positions: Vec2[]) {
+  for (const p of positions) {
+    add([
+      pos(p),
+      circle(10, {fill: false}),
+      area(),
+      body({isStatic: true}),
+      outline(3, rgb(255, 0, 0), IS_DEBUG ? 1 : 0),
+      "hole"
+    ]);
+  }
+}
+
+function drawRoad(positions: Vec2[]) {
+  if (positions.length === 0) {
+    return;
+  }
+  return add([
+    pos(0, 0),
+    polygon(positions, {fill: false}),
+    area(),
+    body({isStatic: true}),
+    color("#000000"),
+    outline(3, rgb(0, 0, 0), IS_DEBUG ? 1 : 0),
+    "road",
+    {myId: `${positions[0]}`},
+  ]);
+}
+
+function drawCar(positions: Vec2[]) {
+  return add([
+    pos(0, 0),
+    polygon(positions, {fill: false}),
+    area(),
+    body({isStatic: true}),
+    outline(3, rgb(255, 0, 0), IS_DEBUG ? 1 : 0),
+    "car",
+  ]);
+}
+
+function drawBoat(positions: Vec2[]) {
+  return add([
+    pos(0, 0),
+    polygon(positions, {fill: false}),
+    area(),
+    body({isStatic: true}),
+    outline(3, rgb(0, 255, 0), IS_DEBUG ? 1 : 0),
+    "boat"
+  ]);
+}
+
+function drawDoubleBicycle(positions: Vec2[]) {
+  return add([
+    pos(0, 0),
+    polygon(positions, {fill: false}),
+    area(),
+    body({isStatic: true}),
+    outline(3, rgb(255, 0, 0), IS_DEBUG ? 1 : 0),
+    "bicycle"
+  ]);
+}
+
+function drawBicycles(positions: Vec2[]) {
+  for (const p of positions) {
+    add([
+      pos(p),
+      circle(30, {fill: false}),
+      anchor("center"),
+      area(),
+      body({isStatic: true}),
+      outline(3, rgb(255, 0, 0), IS_DEBUG ? 1 : 0),
+      "bicycle"
+    ]);
+  }
+}
+
+function drawKebabs(positions: Vec2[]) {
+  for (const p of positions) {
+    add([
+      pos(p),
+      rect(30, 35, {fill: false}),
+      anchor("center"),
+      area(),
+      outline(3, rgb(0, 255, 0), IS_DEBUG ? 1 : 0),
+      "kebab"
+    ]);
+  }
+}
+
+function drawGirls(positions: Vec2[]) {
+  for (const p of positions) {
+    add([
+      pos(p),
+      rect(30, 35, {fill: false}),
+      anchor("center"),
+      area(),
+      body({isStatic: true}),
+      outline(3, rgb(255, 0, 0), IS_DEBUG ? 1 : 0),
+      "girl"
+    ]);
+  }
+}
+
+function drawWater(positions: Vec2[]) {
+  return add([
+    pos(0, 0),
+    polygon(positions, {fill: false}),
+    area(),
+    body({isStatic: true}),
+    outline(3, rgb(0, 0, 255), IS_DEBUG ? 1 : 0),
+    "water"
+  ]);
+}
+
 export function createLevel3Scene() {
   return scene("level3", () => {
 
+    debug.inspect = IS_DEBUG;
+
     let isMoving = false;
+    let isReady = true;
     let targetPos = vec2(0, 0);
     let countdownTime = 120; // 2 minutes
 
@@ -20,14 +141,31 @@ export function createLevel3Scene() {
     const player = add([
       "player",
       sprite("benji"),
-      scale(vec2(0.12, 0.12)),
+      scale(vec2(0.10, 0.10)),
       pos(2938, 808),
+      body({isStatic: false, maxVelocity: 0, gravityScale: 0}),
+      area({shape: new Rect(vec2(0.0), 250, 200), cursor: "text", offset: vec2(-50, 80)}),
       anchor("center"),
-      area({shape: new Rect(vec2(0, 0), 300, 300)}), // Use a circle for better collision
       rotate(),
       {
         speed: 200,
-        moveDirection: vec2(0, 0)
+        moveDirection: vec2(0, 0),
+        lastGoodPos: vec2(2938, 808),
+        blink({duration = 0.5, loops = 1, onFinish}: {duration?: number, loops?: number, onFinish?: () => void}) {
+          let flashCount = 0;
+          const timeToWait = duration / loops;
+          const flash = () => {
+            if (flashCount >= loops) {
+              this.opacity = 1;
+              onFinish?.();
+              return;
+            };
+            this.opacity = this.opacity === 1 ? 0.5 : 1;
+            flashCount++;
+            wait(timeToWait, flash);
+          };
+          flash();
+        }
       }
     ]);
 
@@ -44,6 +182,19 @@ export function createLevel3Scene() {
       fixed(), // Stay in place when camera moves
     ]);
 
+    const maxSpeedText = add([
+      text(`Max Speed: ${player.speed}`, {
+        size: 20,
+        font: "monospace", // Use monospace for consistent spacing
+      }),
+      pos(width() - 10, height() - 10),
+      anchor("botright"),
+      color(0, 0, 0),
+      outline(2, rgb(0, 0, 0)), // Black outline for better visibility
+      layer("ui"),
+      fixed(), // Stay in place when camera moves
+    ]);
+
     // Get background dimensions for camera bounds
     const bgWidth = background.width;
     const bgHeight = background.height;
@@ -54,6 +205,7 @@ export function createLevel3Scene() {
     onUpdate(() => {
       countdownTime -= dt();
       if (countdownTime <= 0) {
+        countdownTime = 0;
         // TODO : game over logic
       }
       timerText.text = formatTime(Math.max(0, countdownTime));
@@ -66,28 +218,21 @@ export function createLevel3Scene() {
 
       // Set camera position
       setCamPos(camX, camY);
-      if (isMoving) {
-        const dist = player.pos.dist(targetPos);
-        if (dist < 5) {
-          console.log("Reached target position:", targetPos);
-          isMoving = false;
-        } else {
-          const moveSpeed = player.speed * dt();
-          player.pos = player.pos.add(player.moveDirection.scale(moveSpeed));
-        }
+
+      if (!isMoving || !isReady) {
+        return;
       }
+      const dist = player.pos.dist(targetPos);
+      if (dist < 5) {
+        isMoving = false;
+        return;
+      }
+
+      player.moveTo(targetPos, player.speed);
     });
 
     onDraw(() => {
-      // drawRect({
-      //   pos: player.pos,
-      //   width: 300 * player.scale.x,
-      //   height: 300 * player.scale.y,
-      //   fill: false,
-      //   anchor: "center",
-      //   outline: {color: rgb(0, 255, 0), width: 3}, // 3px green outline only
-      // });
-      if (isMoving) return;
+      if (isMoving || !isReady) return;
 
       const worldMousePos = toWorld(mousePos());
 
@@ -95,33 +240,75 @@ export function createLevel3Scene() {
       drawLine({
         p1: player.pos,
         p2: worldMousePos,
-        width: 2,
-        color: rgb(255, 0, 0),
+        width: 1,
+        color: rgb(0, 0, 0),
       });
 
       drawCircle({
         pos: worldMousePos,
-        radius: 5,
-        color: rgb(0, 0, 255),
+        fill: true,
+        radius: 2,
+        color: rgb(0, 0, 0),
       });
     });
 
 
+    if (IS_DEBUG) {
+      let positions: Vec2[] = [];
+      let points: GameObj[] = [];
+      onKeyPress("space", () => {
+        let toPrint = "";
+        for (const p of positions) {
+          toPrint += `, vec2(${p.x}, ${p.y})`;
+        }
+        console.log(toPrint);
+        for (const p of points) {
+          p.destroy();
+        }
+        positions = []; // Clear positions after printing
+      });
+
+      let drawn: GameObj | null = null;
+      onKeyPress("d", () => {
+        drawn = drawRoad(positions);
+      });
+
+      onKeyPress("r", () => {
+        drawn?.destroy();
+      });
+
+      onClick(() => {
+        points.push(add([
+          pos(targetPos),
+          circle(5, {fill: true}),
+          color(0, 0, 255),
+        ]));
+        positions.push(targetPos); // TODO : remove this line after debugging
+      });
+    }
+
+
     onClick(() => {
-      if (isMoving) return;
+      targetPos = toWorld(mousePos());
+
+      if (isMoving || !isReady) return;
+      player.lastGoodPos = player.pos; // Save last good position
 
       isMoving = true;
-      targetPos = toWorld(mousePos());
       const dir = targetPos.sub(player.pos).unit();
       if (!player.flipX) {
         player.flipX = true;
       }
 
+      // player.moveTo(targetPos, player.speed);
+
       const angle = dir.angle();
       if (angle < -90 || angle > 90) {
         player.flipY = true;
+        player.area.offset.y = -80;
       } else {
         player.flipY = false;
+        player.area.offset.y = 80;
       }
 
       player.angle = angle;
@@ -151,49 +338,238 @@ export function createLevel3Scene() {
     //   "roadOuter"
     // ]);
 
-    // const whole = add([
-    //   pos(2575, 478),
-    //   circle(10, {fill: false}),
-    //   area(),
-    //   outline(3, rgb(0, 255, 0), 1),
-    //   "hole"
-    // ]);
+    drawHoles([
+      vec2(2575.1700965557106, 476.4200751902918), vec2(2577.93471810089, 714.7952522255193),
+      vec2(2580.3423015790927, 645.2123713309118), vec2(2539.866660814666, 630.6971097762794),
+      vec2(2590.619784899269, 574.4879282614863), vec2(2531.08313160343, 528.9745427346656),
+      vec2(2551.2845549177964, 405.2371683120576), vec2(2482.1912814928373, 341.4443935532714),
+    ]);
 
-    // // Collision detection - keep player on road
-    player.onCollide("roadOuter", () => {
-      console.log("Collided with road outer boundary");
+    drawGirls([
+      vec2(1625.5081645153423, 666.9413908680623), vec2(1700.5686033750717, 746.0576362094423),
+      vec2(1874.697836458527, 712.9171548469895), vec2(1968.4781327657136, 737.9453694469419),
+    ]);
+
+    drawBicycles([
+      vec2(1512.5298822420177, 433.6133879646534), vec2(1530.061702731537, 594.3086870265893),
+      vec2(1361.1644474217183, 714.7438914002439), vec2(1324.2282387182472, 814.0772273862996)
+    ]);
+
+    drawKebabs([
+      vec2(2413.0393827501603, 919.0999685534439), vec2(2306.3111235550377, 981.7845286926107),
+      vec2(2144.3505585712915, 899.9527333298649), vec2(2133.7088291737014, 799.7542097444621)
+    ]);
+
+    drawRoad([
+      vec2(2577.7194504154595, 408.981770728895), vec2(2804.6475549906227, 460.0742077036849), vec2(2702.653594771242, 195.05086503328343), vec2(2492.15873015873, 181.5592903828198), vec2(2563.4890894172127, 350.3734827264239)
+    ]);
+
+    drawRoad([
+      vec2(2611.5294310216705, 524.38968526676), vec2(2638.8683665959, 744.8938869474323), vec2(2642.9019800412784, 848.8714779838468), vec2(2714.461270424098, 841.7006096365079), vec2(2734.0317652887106, 707.545614305042), vec2(2756.291335783575, 600.8789476383754), vec2(2745.216104423117, 560.0979110981921)
+    ]);
+
+    drawRoad([
+      vec2(1376.327276340052, 1497.7238723643898), vec2(1371.662424214383, 1553.4823414985888), vec2(1430.1245413386318, 1591.852482991248), vec2(1486.995324367555, 1539.846872082166)
+    ]);
+
+    drawRoad([
+      vec2(1424.1600675267068, 611.9043880329093), vec2(1376.044641188966, 589.3237004361987), vec2(1268.262314961643, 821.5911163030369), vec2(1189.7846166036009, 956.0318394387555), vec2(1261.9871834938908, 977.8112123805588), vec2(1304.24912464428, 908.7198586206255), vec2(1391.2707837201563, 696.2761069098791), vec2(1421.3111310283066, 612.1639296660358), vec2(1376.044641188966, 589.3237004361987)
+    ]);
+
+    drawRoad([
+      vec2(1166.1660666403475, 999.8022174823691), vec2(1227.0887391085394, 1018.2020036454783), vec2(1188.439695169649, 1060.3240974875914), vec2(1135.308711878185, 1116.549245460068), vec2(1063.7615648021947, 1177.5075455333156), vec2(985.1002505601341, 1227.943812950507), vec2(931.9248700249809, 1272.6604345316512), vec2(913.7487260289956, 1252.8082977708295), vec2(992.894123151265, 1187.7378365616048), vec2(1092.5076662411998, 1088.861945444926), vec2(1162.1355890070345, 1002.6314786195088)
+    ]);
+
+    drawRoad([
+      vec2(1417.1836527710948, 1546.8692312057324), vec2(1402.1007983817296, 1570.6445547340782), vec2(1519.6057260281095, 1649.1421960377793), vec2(1629.4035757548704, 1699.9962651727358), vec2(1738.6463367698602, 1729.5760971055088), vec2(1808.694251077176, 1738.5396825396824), vec2(1908.911891390298, 1723.002801120448), vec2(1996.2144481326654, 1704.7768440709617), vec2(2074.295681159707, 1660.8552754435107), vec2(2142.256437261533, 1601.0980392156862), vec2(2220.8553045619137, 1504.888888888889), vec2(2265.8794985934883, 1400.1469172860216), vec2(2320.0099381444124, 1261.6799503412794), vec2(2405.2141215938514, 1042.2550858885938), vec2(1987.5110403613583, 1029.1084939184723)
+    ]);
+
+    drawRoad([
+      vec2(1394.9649268946864, 1563.292870131742), vec2(1345.7024612194446, 1664.3955533110457), vec2(1257.1367042557497, 1621.1167133520075), vec2(1326.5045818945296, 1499.8095238095239), vec2(1402.3348434673621, 1518.7816170024798)
+    ]);
+
+    drawRoad([
+      vec2(2500.954209039837, 186.6893264236909), vec2(2338.2582760125024, 185.44351073762837), vec2(2427.147164901391, 85.94771241830065)
+    ]);
+
+    drawRoad([
+      vec2(2794.0821661998134, 449.5535332404305), vec2(2865.988664065776, 559.3778272091231), vec2(2969.170868347339, 485.5776404677599)
+    ]);
+    drawRoad([
+      vec2(2866.089635854342, 554.9281082411957), vec2(2835.314659197012, 756.8870798432788), vec2(2873.2605042016808, 765.931076571919), vec2(2976.6405228758167, 765.0347180285016), vec2(2945.566760037348, 488.9562866559526)
+    ]);
+    drawRoad([
+      vec2(2866.089635854342, 554.9281082411957), vec2(2835.314659197012, 756.8870798432788), vec2(2873.2605042016808, 765.931076571919), vec2(2976.6405228758167, 765.0347180285016), vec2(2945.566760037348, 488.9562866559526)
+    ]);
+    drawRoad([
+      vec2(3015.183940242764, 801.4866321274746), vec2(2968.2745098039213, 871.1038123328901), vec2(3046.855275443511, 923.0266453631414), vec2(3088.3865546218485, 820.2920769520234)
+    ]);
+    drawRoad([
+      vec2(2964.987861811391, 758.4014939309056), vec2(3023.25116713352, 823.006197487101), vec2(3121.8506069094306, 768.3283263386415), vec2(2982.6162464985996, 693.9305672350001)
+    ]);
+    drawRoad([
+      vec2(2992.4761904761904, 859.09243697479), vec2(2624.3716153127916, 885.6844070961719), vec2(2539.3669467787113, 1075.4136321195147), vec2(2982.8331898985048, 909.3325589568589)
+    ]);
+    drawRoad([
+      vec2(2719.983193277311, 763.1820728291316), vec2(2807.6769374416435, 879.4098972922502), vec2(2624.3716153127916, 897.3370681605975), vec2(2643.643323996265, 785.8898225957048)
+    ]);
+    drawRoad([
+      vec2(2558.998946909109, 1027.0062191229224), vec2(2480.567574360089, 1159.9660697298318), vec2(2416.746586722921, 1302.3958900239438), vec2(2364.03830730899, 1450.1684121962767), vec2(2305.9243950774307, 1584.0246213466035), vec2(2572.5910617440973, 1588.549019607843), vec2(2635.7843390550215, 1307.9887955182073), vec2(2716.4044526086464, 1096.876805983846)
+    ]);
+    drawRoad([
+      vec2(2317.1873737685523, 1576.2987861811391), vec2(2164.3582421158912, 1734.655462184874), vec2(2230.240595057068, 1731.6676003734829), vec2(2364.246197297964, 1581.079365079365)
+    ]);
+    drawRoad([
+      vec2(2183.2541288988673, 1722.4052287581699), vec2(1994.8694416906505, 1818.6143790849674), vec2(2004.281206396533, 1839.2306255835667), vec2(2202.5258375823405, 1740.0336134453783)
+    ]);
+    drawRoad([
+      vec2(2006.3217078825464, 1819.5107376283847), vec2(1832.5775435501469, 1838.9318394024276), vec2(1834.2208675464121, 1849.0905695611577), vec2(2010.952893690203, 1838.9318394024276)
+    ]);
+    drawRoad([
+      vec2(1847.1406334052053, 1841.0233426704015), vec2(1677.8782617898926, 1821.0046685340803), vec2(1676.2349377936275, 1844.608776844071), vec2(1841.6130890541317, 1860.1456582633054)
+    ]);
+    drawRoad([
+      vec2(1686.3936679523576, 1827.8767507002801), vec2(1457.0752739280813, 1735.8506069094306), vec2(1444.0639213174577, 1796.5042016806724), vec2(1683.8398316816033, 1846.7002801120448)
+    ]);
+    drawRoad([
+      vec2(1467.3692434463092, 1746.0093370681607), vec2(1332.4672826619953, 1643.8244631185808), vec2(1273.7557980681577, 1740.0336134453783), vec2(1458.2562649215656, 1789.9309056956115)
+    ]);
+    drawRoad([
+      vec2(2765.6974789915967, 450.985958535702), vec2(2826.214228526766, 488.00778941585656), vec2(2872.364145658263, 439.9032142524579), vec2(2786.612511671335, 396.0554818550603)
+    ]);
+    drawRoad([
+      vec2(2372.1694415059937, 173.4920634920635), vec2(2412.8361220439747, 248.7861811391223), vec2(2473.603082753035, 411.624649859944), vec2(2427.4346605621204, 432.53471601475303), vec2(2396.0838775871116, 429.7042698271814), vec2(2187.249987671776, 339.8578086690037)
+    ]);
+    drawRoad([
+      vec2(1625.3578997226546, 279.2623716153128), vec2(1540.054445007435, 313.921568627451), vec2(1511.2215785275098, 306.7507002801121), vec2(1639.8490295079018, 246.09710550887024)
+    ]);
+    drawRoad([
+      vec2(1541.9965551848393, 314.2203548085901), vec2(1518.8406261465573, 432.2408963585434), vec2(1466.7024375377805, 400.56956115779644), vec2(1529.8957148487048, 285.53688141923436)
+    ]);
+    drawRoad([
+      vec2(1513.6118679766225, 458.8328664799253), vec2(1440.3357663513139, 565.5880863740351), vec2(1399.2005421125102, 547.2000220662167), vec2(1462.3938194234347, 355.67807995603926), vec2(1525.587096734359, 374.50160936780395)
+    ]);
+    drawRoad([
+      vec2(1488.4186893967135, 714.2434202843708), vec2(1387.686320613103, 961.2046876987617), vec2(1421.000979810115, 994.3699538052043), vec2(1615.3613906411142, 760.1215877921325)
+    ]);
+    drawRoad([
+      vec2(1989.3140572938732, 840.5976473030561), vec2(2078.2029461827624, 863.0066108884903), vec2(2162.6100423545645, 927.2456398334016), vec2(2113.4597155571787, 950.550961962253), vec2(2048.9634161449785, 931.1474096777724)
+    ]);
+    drawRoad([
+      vec2(1591.5439647300384, 783.1152810181476), vec2(1598.1269552236022, 749.8485285089456), vec2(2018.6685051769168, 843.3686032054909), vec2(1997.6040794066087, 886.6925994706637)
+    ]);
+    drawRoad([
+      vec2(2154.018645232939, 925.8335891998887), vec2(2349.2754146073553, 1025.6281737003555), vec2(2298.3323707231348, 1061.7813016181894), vec2(2101.880456624162, 938.681394988871)
+    ]);
+    drawRoad([
+      vec2(2322.2352652142645, 1003.5179962960606), vec2(2432.63675914517, 1006.8046442885909), vec2(2420.2371326278962, 1045.646847836677), vec2(2321.189513580277, 1041.4638413007292)
+    ]);
+    drawRoad([
+      vec2(1387.5800824430462, 965.1394330188765), vec2(1269.1113616213843, 1122.3009642980549), vec2(1420.4465623683498, 1123.7948952037505)
+    ]);
+    drawRoad([
+      vec2(1282.8555259537839, 1115.7276683129942), vec2(1158.4110815093395, 1231.3579204138346), vec2(1420.8947416400583, 1231.3579204138346), vec2(1453.9106146559313, 1124.0936813848896)
+    ]);
+    drawRoad([
+      vec2(1183.060941453317, 1219.1076869871304), vec2(1000.0544055056046, 1333.2440081822751), vec2(1099.1020245532236, 1444.0936813848896), vec2(1404.312108586837, 1529.2477430095394), vec2(1419.8103066867059, 1270.1129894153746)
+    ]);
+    drawRoad([
+      vec2(1618.2870743679202, 283.08222771706176), vec2(2074.2121679796765, 321.7138126224978), vec2(2075.820824215673, 259.29910465790175), vec2(1613.3958499896519, 246.69467787114846)
+    ]);
+    drawRoad([
+      vec2(2252.3277669184363, 286.4262849854031), vec2(2242.4886239192297, 351.31095499064264), vec2(2048.1949530567895, 317.0106816895632), vec2(2059.365186599943, 242.40045665543778)
+    ]);
+    drawRoad([
+      vec2(2402.703973355756, 546.7783358339319), vec2(2492.441241062902, 526.8746166069967), vec2(2509.86768125262, 586.7464067962832), vec2(2530.1759137192366, 804.2690188212337), vec2(2520.618803751538, 853.5751360387771), vec2(2451.0844023062573, 892.5397136073545), vec2(2383.301891925863, 901.4604146497068), vec2(2299.7531878740974, 885.6934847883604), vec2(2225.203405749986, 841.2862361185857), vec2(2093.642451107375, 746.5732606323639)
+    ]);
+    drawRoad([
+      vec2(1629.7884641396615, 382.83252122627084), vec2(1590.4738904047085, 642.9252887779003), vec2(1676.8363660771602, 667.6418960006849), vec2(1807.4538514640813, 693.2586439245799), vec2(2168.5591056633284, 772.3211055917409), vec2(2430.8141339256786, 554.9974750954586), vec2(2153.6865108388647, 438.3875834110544), vec2(1787.8660683255964, 394.9604657483165)
+    ]);
+    drawRoad([
+      vec2(1613.4139198949626, 473.0551409019835), vec2(1528.998619760705, 615.0042638403377), vec2(1638.5270022475563, 640.9544234992137)
+    ]);
+    drawRoad([
+
+    ]);
+
+    drawWater([
+      vec2(1187.435211785101, 957.3287483862141), vec2(1168.5032915315326, 961.3964564854153), vec2(1162.6341646952521, 974.7409135495134), vec2(1167.0635299868895, 989.0300097731617), vec2(1148.832530635586, 1009.3468928709477), vec2(1048.6212121327899, 948.1578433460799), vec2(1106.387867723834, 861.6022051524587), vec2(1203.1411450340104, 927.0332765369967), vec2(1187.607888627636, 958.713221438025)
+    ]);
+
+    drawCar([
+      vec2(2549.1806794030877, 943.3939791350742), vec2(2581.704040292363, 902.299086532128), vec2(2599.6469025728807, 907.9984806465338), vec2(2560.2074906659905, 972.1227224973823), vec2(2546.338367066248, 958.5669828199332)
+    ]);
+
+    drawCar([
+      vec2(2376.6476289599377, 1007.1408486719878), vec2(2447.351041126195, 1040.052401864537), vec2(2354.703659815508, 1230.2448594281323), vec2(2319.9945600179535, 1209.1511808937712), vec2(2309.7642044984495, 1165.6818223720259), vec2(2310.7673332409013, 1140.1051517358367), vec2(2379.105399430282, 1008.3579621943934)
+    ]);
+
+    drawCar([
+      vec2(2372.852008428813, 1324.5935772379798), vec2(2324.4825555921607, 1432.300310915997), vec2(2335.2710008889944, 1434.015069606702), vec2(2339.426543607247, 1436.3392691068998), vec2(2387.8900016462326, 1335.7364040328916), vec2(2376.294710163436, 1330.4904653267197)
+    ]);
+
+
+    drawCar([vec2(2217.598208775956, 1524.1242427588413), vec2(2233.803212873449, 1532.5543551390554), vec2(2195.978824451414, 1589.6275353444712), vec2(2185.230591839926, 1578.0915032679738), vec2(2181.242156646785, 1571.5182072829132), vec2(2216.3364964769244, 1528.0617237035704)]);
+    drawCar([vec2(1973.0168355560143, 1718.829372682811), vec2(1817.1322258892742, 1741.5275443510736), vec2(1820.1014497693432, 1760.0522875816994), vec2(1972.011089768763, 1745.1129785247433), vec2(1972.7207736307078, 1723.002801120448)]);
+    drawCar([vec2(1662.1186370663424, 1792.6199813258636), vec2(1607.3712397089125, 1772.0037348272642), vec2(1618.8304125737325, 1756.765639589169), vec2(1674.7192425649941, 1775.8879551820728), vec2(1674.7821618703742, 1789.9309056956115), vec2(1664.1990770090922, 1792.0224089635853)]);
+
+    drawCar([
+      vec2(947.2608852398828, 1267.4557691651028), vec2(999.3460616523568, 1331.4817809840788), vec2(1024.8737043782469, 1328.1728420777426), vec2(1100.8048102823618, 1453.38683558702), vec2(1036.7364941684255, 1494.056718927342), vec2(888.7567643594684, 1303.8541351279318), vec2(911.4833699858791, 1275.2374854232512), vec2(931.6680521091621, 1261.0014207008599)
+    ]);
+
+    drawDoubleBicycle([
+      vec2(2232.645123919407, 378.08784563617803), vec2(2377.8176050063594, 439.36909512702687), vec2(2389.9491919158213, 422.9478824097091), vec2(2365.6550500456096, 349.17735358271784), vec2(2254.873901133033, 366.3784438695959), vec2(2223.850360112482, 373.59488390937946)
+    ]);
+    drawDoubleBicycle([
+      vec2(2042.7807498711454, 443.51171501707097), vec2(2019.7498961030185, 394.2867045250042), vec2(1930.4491668452229, 429.3478383650494), vec2(2033.814961573672, 447.81086266915673)
+    ]);
+
+    drawBoat([
+      vec2(1392.321007972376, 561.269909615033), vec2(1370.6024649586054, 600.9027734319052), vec2(1272.270692198954, 581.5614257671768), vec2(1292.6287135349676, 514.3801276366668), vec2(1399.816278489634, 518.0711839590767), vec2(1389.150295492041, 561.9045804256689)
+    ]);
+
+    function onEnnemiHit(sound: string = "hit") {
+      isReady = false;
+      isMoving = false;
+      player.blink({
+        duration: 3,
+        loops: 20,
+        onFinish: () => {
+          player.pos = player.lastGoodPos; // Reset to last good position
+          player.lastGoodPos = player.pos; // Update last good position
+          isReady = true; // Allow movement again
+        }
+      });
+    }
+
+    player.onCollide("girl", () => {
+      onEnnemiHit();
     });
 
     player.onCollide("hole", () => {
-      console.log("Collided with hole");
+      onEnnemiHit();
     });
 
-    // player.onCollide("obstacle", () => {
-    //   isMoving = false;
-    //   // Push player back
-    //   player.pos = player.pos.sub(player.moveDirection.scale(40));
-    // });
+    player.onCollide("bicycle", () => {
+      onEnnemiHit();
+    });
 
-    // player.onCollide("building", () => {
-    //   isMoving = false;
-    //   // Push player back
-    //   player.pos = player.pos.sub(player.moveDirection.scale(30));
-    // });
+    player.onCollide("car", () => {
+      onEnnemiHit();
+    });
 
-    // player.onCollide("water", () => {
-    //   isMoving = false;
-    //   // Push player back strongly from water
-    //   player.pos = player.pos.sub(player.moveDirection.scale(60));
-    // });
+    player.onCollide("road", (o, col) => {
+      isMoving = false; // Stop moving when colliding with road
+      // player.moveBy(col.displacement.scale(1.5)); // Push player back slightly
+    });
 
-    // // Enhanced movement validation
-    // let lastValidPos = player.pos;
 
-    // // Save last valid position when not moving
-    // player.onUpdate(() => {
-    //   if (!isMoving) {
-    //     lastValidPos = player.pos;
-    //   }
-    // });
+    const collectedKebabs = new Set();
+    player.onCollide("kebab", (obj) => {
+      if (collectedKebabs.has(obj)) return; // Prevent double collection
+      collectedKebabs.add(obj);
+      player.speed += 25;
+      maxSpeedText.text = `Max Speed: ${player.speed}`;
+    });
   });
 }

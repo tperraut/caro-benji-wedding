@@ -2,6 +2,7 @@ interface InstructionsSceneProps {
   asset?: string;
   sceneToGo?: string;
   isStart?: boolean;
+  duration?: number;
 }
 
 export function createInstructionsScene() {
@@ -9,14 +10,15 @@ export function createInstructionsScene() {
     asset = "level1",
     sceneToGo = "level1",
     isStart = false,
+    duration = 7,
   }: InstructionsSceneProps) => {
     add([pos(0, 0), rect(width(), height()), color("#FFFFFF")])
-    const bg = add([sprite(asset), animate()])
+    const bg = add([sprite(asset), animate(), scale(0.5)])
     if (!isStart) {
       bg.onAnimateFinished(() => {
         go(sceneToGo, {});
       })
-      bg.animate("opacity", [1, 1, 0], {duration: 7, loops: 1})
+      bg.animate("opacity", [1, 1, 0], {duration: duration, loops: 1})
       return;
     }
     const t = add([
