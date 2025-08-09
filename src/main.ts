@@ -35,10 +35,27 @@ loadSprite("salami", "sprites/salami.png", {singular: true});
 
 loadSound("hit", "sounds/meow.wav");
 loadSound("eat", "sounds/pop.wav");
+loadSound("god", "sounds/godverdoeme.ogg");
+loadSound("kebab", "sounds/kebab.ogg");
+loadSound("paljas", "sounds/paljas.ogg");
+loadSound("ela", "sounds/ela.ogg");
+loadSound("mo-joenge-toch", "sounds/mo-joenge-toch.ogg");
 
 
 loadSprite("level3", "sprites/level_3.jpg", {singular: true});
-loadSprite("level3BG", "sprites/antwerpen.png", {singular: true});
+loadSprite("level3BG", "sprites/level_3_bg.jpg", {singular: true});
+loadSprite("bike_girl", "sprites/bike_girl.png", {singular: true});
+loadSprite("bike_boy", "sprites/bike_boy.png", {singular: true});
+loadSprite("camion_red", "sprites/camion_red.png", {singular: true});
+loadSprite("camion_white", "sprites/camion_white.png", {singular: true});
+loadSprite("car", "sprites/car.png", {singular: true});
+loadSprite("double_bike", "sprites/double_bike.png", {singular: true});
+loadSprite("kebab", "sprites/kebab.png", {singular: true});
+loadSprite("maire", "sprites/maire.png", {singular: true});
+loadSprite("panneau", "sprites/panneau.png", {singular: true});
+loadSprite("shopping_girl", "sprites/shopping_girl.png", {singular: true});
+loadSprite("sport_car", "sprites/sport_car.png", {singular: true});
+loadSprite("hole", "sprites/hole.png", {singular: true});
 loadSprite("benji", "sprites/benjimoto.png", {singular: true});
 
 setGravity(1000);
