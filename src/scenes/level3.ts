@@ -37,48 +37,6 @@ function drawRoad(positions: Vec2[]) {
   ]);
 }
 
-function drawCar(positions: Vec2[]) {
-  if (positions.length === 0) {
-    return;
-  }
-  return add([
-    pos(0, 0),
-    polygon(positions, {fill: false}),
-    area(),
-    body({isStatic: true}),
-    outline(3, rgb(255, 0, 0), IS_DEBUG ? 1 : 0),
-    "car",
-  ]);
-}
-
-function drawBoat(positions: Vec2[]) {
-  if (positions.length === 0) {
-    return;
-  }
-  return add([
-    pos(0, 0),
-    polygon(positions, {fill: false}),
-    area(),
-    body({isStatic: true}),
-    outline(3, rgb(0, 255, 0), IS_DEBUG ? 1 : 0),
-    "boat"
-  ]);
-}
-
-function drawDoubleBicycle(positions: Vec2[]) {
-  if (positions.length === 0) {
-    return;
-  }
-  return add([
-    pos(0, 0),
-    polygon(positions, {fill: false}),
-    area(),
-    body({isStatic: true}),
-    outline(3, rgb(255, 0, 0), IS_DEBUG ? 1 : 0),
-    "bicycle"
-  ]);
-}
-
 function drawBike(path: Vec2[]) {
   if (path.length < 2) {
     return;
@@ -141,7 +99,6 @@ function drawKebab(p: Vec2) {
   return e;
 }
 
-
 function drawPeople(peopleSpawns: {door: Vec2, road: Vec2}[]) {
   const startI = randi(0, peopleSpawns.length)
   const start = peopleSpawns[startI];
@@ -179,6 +136,81 @@ function drawPeople(peopleSpawns: {door: Vec2, road: Vec2}[]) {
   });
 
   wait(randi(5, 15), () => drawPeople(peopleSpawns));
+}
+
+function drawCar(path: Vec2[], stopAtLast: boolean = false) {
+  if (path.length < 2) {
+    return;
+  }
+  const b = add([
+    pos(path[0]),
+    sprite(randi(0, 10) < 8 ? "car" : "sport_car"),
+    scale(0.06, 0.06),
+    anchor("center"),
+    area({collisionIgnore: ["hole", "road", "kebab", "people", "car"]}),
+    body({isStatic: true}),
+    rotate(),
+    outline(3, rgb(255, 0, 0), IS_DEBUG ? 1 : 0),
+    "car",
+    {path: path}
+  ]);
+
+  let i = 1;
+  let targetPos = b.path[0];
+  b.onUpdate(() => {
+    const dist = b.pos.dist(targetPos);
+    if (dist < 1) {
+      i = (i + 1) % b.path.length;
+      targetPos = b.path[i];
+
+      if (!b.flipX) {
+        b.flipX = true;
+      }
+
+      // player.moveTo(targetPos, player.speed);
+
+      const dir = targetPos.sub(b.pos).unit();
+      const angle = dir.angle();
+      if (angle < -90 || angle > 90) {
+        b.flipY = true;
+        b.area.offset.y = -80;
+      } else {
+        b.flipY = false;
+        b.area.offset.y = 80;
+      }
+
+      b.angle = angle;
+    }
+    b.moveTo(targetPos, 100);
+  });
+}
+
+function drawBoat(positions: Vec2[]) {
+  if (positions.length === 0) {
+    return;
+  }
+  return add([
+    pos(0, 0),
+    polygon(positions, {fill: false}),
+    area(),
+    body({isStatic: true}),
+    outline(3, rgb(0, 255, 0), IS_DEBUG ? 1 : 0),
+    "boat"
+  ]);
+}
+
+function drawDoubleBicycle(positions: Vec2[]) {
+  if (positions.length === 0) {
+    return;
+  }
+  return add([
+    pos(0, 0),
+    polygon(positions, {fill: false}),
+    area(),
+    body({isStatic: true}),
+    outline(3, rgb(255, 0, 0), IS_DEBUG ? 1 : 0),
+    "bicycle"
+  ]);
 }
 
 function drawWater(positions: Vec2[]) {
@@ -274,9 +306,6 @@ export function createLevel3Scene() {
     const bgHeight = background.height * background.scale.y;
     const screenWidth = width();
     const screenHeight = height();
-
-    console.log(`Background dimensions: ${bgWidth}x${bgHeight}`);
-    console.log(`Screen dimensions: ${screenWidth}x${screenHeight}`);
 
     // Camera follows player with bounds checking
     onUpdate(() => {
@@ -394,29 +423,7 @@ export function createLevel3Scene() {
       player.moveDirection = dir;
     });
 
-    // Pixel perfect collision shapes for Antwerp road circuit (3282 × 1846)
-
-    // Define the drivable road area - main circuit path (green debug)
-    // const roadBounds = add([
-    //   pos(0, 0),
-    //   polygon([
-    //     // Outer boundary of the road circuit
-    //     vec2(120, 400), vec2(400, 320), vec2(700, 280), vec2(1000, 260),
-    //     vec2(1300, 270), vec2(1600, 290), vec2(1900, 320), vec2(2200, 360),
-    //     vec2(2500, 410), vec2(2800, 470), vec2(3100, 540), vec2(3280, 620),
-    //     vec2(3280, 720), vec2(3200, 820), vec2(3100, 920), vec2(2980, 1020),
-    //     vec2(2850, 1120), vec2(2700, 1220), vec2(2550, 1320), vec2(2400, 1400),
-    //     vec2(2200, 1460), vec2(2000, 1500), vec2(1800, 1520), vec2(1600, 1530),
-    //     vec2(1400, 1520), vec2(1200, 1500), vec2(1000, 1470), vec2(800, 1430),
-    //     vec2(600, 1380), vec2(400, 1320), vec2(250, 1240), vec2(150, 1140),
-    //     vec2(80, 1020), vec2(50, 900), vec2(40, 780), vec2(60, 660),
-    //     vec2(100, 540), vec2(120, 400)
-    //   ], {fill: false}),
-    //   area(),
-    //   outline(3, rgb(0, 255, 0), 1),
-    //   "roadOuter"
-    // ]);
-
+    //#region DRAW ROAD
     drawRoad([
       vec2(6443.733, 1838.744), vec2(6430.229, 1839.882), vec2(5961.678, 1839.895), vec2(5956.823, 1842.226), vec2(5956.085, 1819.915), vec2(5951.994, 1534.443), vec2(5948.245, 1272.380), vec2(6338.473, 1277.304)
     ]);
@@ -505,9 +512,6 @@ export function createLevel3Scene() {
       vec2(198.791, 2089.303), vec2(294.649, 2022.450), vec2(294.649, 2212.552), vec2(294.649, 2402.500), vec2(294.649, 2592.448), vec2(295.711, 2783.458), vec2(299.248, 2975.529), vec2(306.676, 3101.738), vec2(13.441, 3098.908), vec2(24.406, 2819.114), vec2(21.223, 2562.666), vec2(22.991, 2308.694), vec2(37.494, 2163.668)
     ]);
 
-    drawRoad([
-      vec2(259.277, 2093.278), vec2(623.964, 1858.761), vec2(577.405, 1794.172), vec2(266.837, 1975.985)
-    ]);
 
     drawRoad([
       vec2(364.333, 3088.026), vec2(294.296, 2999.595), vec2(251.849, 3042.396), vec2(293.942, 3103.236)
@@ -888,7 +892,9 @@ export function createLevel3Scene() {
     drawRoad([
       vec2(1962.461, 1088.083), vec2(2163.946, 1090.916), vec2(2166.776, 1206.229), vec2(1976.120, 1393.702)
     ]);
+    //#endregion DRAW ROAD
 
+    //#region DRAW HOLES
     drawHole(vec2(5322.205, 1217.711));
     drawHole(vec2(5031.800, 855.854));
     drawHole(vec2(4196.007, 1528.278));
@@ -901,7 +907,9 @@ export function createLevel3Scene() {
     drawHole(vec2(1057.842, 1526.349));
     drawHole(vec2(1739.463, 509.991));
     // drawHole();
+    //#endregion DRAW HOLES
 
+    //#region DRAW BIKE
     drawBike([
       vec2(2183.068, 621.631), vec2(2084.920, 620.806), vec2(2029.032, 620.098), vec2(2027.617, 585.787), vec2(2027.979, 536.099), vec2(2028.333, 486.225), vec2(2026.918, 435.289), vec2(2026.564, 384.353), vec2(2026.210, 333.417), vec2(2024.795, 283.542), vec2(2018.782, 261.612), vec2(1995.083, 247.008), vec2(1958.649, 245.239), vec2(1915.495, 246.300), vec2(1872.125, 246.300), vec2(1829.777, 247.715), vec2(1800.894, 250.191), vec2(1793.820, 278.135), vec2(1792.405, 305.018), vec2(1792.405, 335.438), vec2(1792.405, 365.858), vec2(1792.405, 396.278), vec2(1791.344, 426.698), vec2(1787.453, 459.948), vec2(1782.500, 496.735), vec2(1774.365, 528.924), vec2(1763.046, 561.466), vec2(1729.181, 565.445), vec2(1695.931, 544.222), vec2(1674.708, 522.291), vec2(1647.471, 504.605), vec2(1605.378, 505.312), vec2(1561.871, 509.557), vec2(1537.464, 516.631), vec2(1529.328, 549.881), vec2(1521.560, 584.137), vec2(1512.717, 618.801), vec2(1503.874, 653.466), vec2(1495.031, 688.131), vec2(1486.188, 722.796), vec2(1477.345, 757.460), vec2(1458.598, 791.771), vec2(1439.850, 826.082), vec2(1421.457, 860.393), vec2(1406.601, 895.412), vec2(1393.159, 930.076), vec2(1392.098, 976.060), vec2(1408.723, 1014.262), vec2(1435.606, 1044.328), vec2(1463.903, 1056.001), vec2(1522.267, 1057.416), vec2(1585.584, 1058.123), vec2(1649.253, 1058.831), vec2(1712.923, 1059.538), vec2(1776.593, 1060.246), vec2(1840.263, 1060.953), vec2(1904.287, 1061.661), vec2(1968.310, 1062.368), vec2(2032.334, 1063.076), vec2(2096.357, 1063.783), vec2(2157.197, 1066.259), vec2(2182.312, 1068.028), vec2(2186.556, 1097.740), vec2(2187.618, 1128.868), vec2(2187.971, 1158.934), vec2(2190.801, 1189.708), vec2(2220.160, 1214.468), vec2(2253.410, 1236.045), vec2(2291.965, 1240.644), vec2(2341.486, 1244.181), vec2(2393.130, 1246.657), vec2(2444.321, 1249.465), vec2(2495.099, 1252.267), vec2(2546.272, 1255.090), vec2(2570.561, 1221.480), vec2(2582.234, 1181.156), vec2(2585.417, 1141.539), vec2(2586.832, 1098.385), vec2(2586.107, 1056.475), vec2(2585.400, 1013.675), vec2(2585.046, 970.875), vec2(2585.400, 928.175), vec2(2584.692, 886.536), vec2(2583.631, 846.212), vec2(2556.041, 831.002), vec2(2504.044, 821.451), vec2(2430.116, 820.036), vec2(2354.066, 816.853), vec2(2288.274, 815.084), vec2(2293.579, 756.013), vec2(2296.056, 693.050), vec2(2296.056, 630.442)
     ]);
@@ -909,11 +917,15 @@ export function createLevel3Scene() {
     drawBike([
       vec2(4099.910, 2108.102), vec2(4018.308, 2108.470), vec2(3976.215, 2103.165), vec2(3973.739, 2066.731), vec2(3976.215, 1991.742), vec2(3978.691, 1916.400), vec2(3980.106, 1838.581), vec2(3980.443, 1761.719), vec2(3980.438, 1685.178), vec2(3979.731, 1609.718), vec2(3986.805, 1582.127), vec2(4083.371, 1582.481), vec2(4182.060, 1581.774), vec2(4284.639, 1585.311), vec2(4386.724, 1587.075), vec2(4488.596, 1587.075), vec2(4590.468, 1587.075), vec2(4689.510, 1587.075), vec2(4756.717, 1583.184), vec2(4773.342, 1554.178), vec2(4778.294, 1500.413), vec2(4779.355, 1426.839), vec2(4779.001, 1353.265), vec2(4777.940, 1280.044), vec2(4776.879, 1206.824), vec2(4775.818, 1133.250), vec2(4775.464, 1058.968), vec2(4776.172, 982.918), vec2(4777.233, 906.868), vec2(4778.294, 830.818), vec2(4778.648, 789.786), vec2(4772.634, 750.170), vec2(4725.943, 722.579), vec2(4633.622, 721.872), vec2(4541.301, 721.518), vec2(4448.979, 721.164), vec2(4356.658, 720.811), vec2(4264.337, 720.457), vec2(4203.850, 726.824), vec2(4192.177, 760.428), vec2(4192.885, 819.853), vec2(4189.701, 881.754), vec2(4186.872, 944.009), vec2(4190.409, 1011.216), vec2(4192.177, 1079.131), vec2(4192.177, 1146.691), vec2(4192.531, 1187.016), vec2(4155.037, 1208.946), vec2(4099.784, 1192.304), vec2(4033.638, 1187.352), vec2(3966.077, 1188.766), vec2(3895.686, 1191.243), vec2(3824.942, 1190.181), vec2(3754.198, 1188.766), vec2(3683.807, 1189.120), vec2(3613.770, 1189.120), vec2(3541.611, 1189.828), vec2(3503.763, 1215.296), vec2(3498.811, 1269.415), vec2(3493.505, 1325.657), vec2(3491.029, 1385.082), vec2(3496.335, 1447.691), vec2(3499.165, 1512.068), vec2(3500.933, 1577.153), vec2(3502.702, 1642.237), vec2(3504.471, 1707.322), vec2(3506.239, 1772.407), vec2(3508.008, 1837.492), vec2(3509.776, 1902.576), vec2(3511.545, 1967.661), vec2(3513.314, 2032.746), vec2(3514.728, 2097.831), vec2(3530.646, 2153.011), vec2(3589.364, 2164.330), vec2(3686.283, 2167.867), vec2(3788.509, 2171.051), vec2(3891.442, 2173.881), vec2(3993.924, 2174.576), vec2(4090.054, 2176.341)
     ])
+    //#endregion DRAW BIKE
 
-    drawWater([
+    //#region DRAW CAR
+    drawCar([
     ]);
 
-    drawCar([
+    //#endregion DRAW CAR
+
+    drawWater([
     ]);
 
     drawDoubleBicycle([
@@ -968,26 +980,28 @@ export function createLevel3Scene() {
       });
     }
 
-    player.onCollide("people", () => {
-      onEnnemiHit(["ela", "mo-joenge-toch"]);
-    });
+    // player.onCollide("people", () => {
+    //   onEnnemiHit(["ela", "mo-joenge-toch"]);
+    // });
 
-    player.onCollide("hole", () => {
-      onEnnemiHit(["god"]);
-    });
+    // player.onCollide("hole", () => {
+    //   onEnnemiHit(["god"]);
+    // });
 
-    player.onCollide("bicycle", () => {
-      onEnnemiHit(["ela", "paljas"]);
-    });
+    // player.onCollide("bicycle", () => {
+    //   onEnnemiHit(["ela", "paljas"]);
+    // });
 
-    player.onCollide("car", () => {
-      onEnnemiHit();
-    });
+    // player.onCollide("car", () => {
+    //   onEnnemiHit();
+    // });
 
     player.onCollide("road", (o, col) => {
-      // console.log("Collided with road", o.pts[0]);
+      console.log("Collided with road", o.myId);
       isMoving = false; // Stop moving when colliding with road
-      // player.moveBy(col.displacement.scale(1.5)); // Push player back slightly
+      if (col.hasOverlap()) {
+        player.moveBy(col.displacement.scale(2)); // Push player back slightly
+      }
     });
 
 
@@ -1001,22 +1015,10 @@ export function createLevel3Scene() {
 }
 
 
-/* Bike path
-vec2(2675.873, 2007.230),
-vec2(2676.227, 2055.690),
+/* Car path
+TOP TO DOWN
+vec2(4556.272, -27.305), vec2(4648.883, 62.480), vec2(4721.871, 168.618), vec2(4796.644, 289.324), vec2(4857.811, 406.395), vec2(4916.826, 529.777), vec2(4970.193, 656.132), vec2(5017.910, 786.649), vec2(5061.763, 918.653), vec2(5105.616, 1050.657), vec2(5149.468, 1182.661), vec2(5193.321, 1314.664), vec2(5233.308, 1447.263), vec2(5271.809, 1581.050), vec2(5303.175, 1716.919), vec2(5292.918, 1854.274), vec2(5276.120, 1991.035), vec2(5250.998, 2130.174), vec2(5225.578, 2269.313), vec2(5200.159, 2408.452), vec2(5160.766, 2546.104), vec2(5086.885, 2679.297), vec2(5001.410, 2811.598), vec2(4913.556, 2944.197), vec2(4825.220, 3076.177), vec2(4737.366, 3209.667), vec2(4652.485, 3344.941), vec2(4607.964, 3427.654), vec2(4492.163, 3522.495), vec2(4376.066, 3617.038), vec2(4254.022, 3708.906), vec2(4123.950, 3793.043), vec2(3991.203, 3875.694), vec2(3855.483, 3956.264), vec2(3713.817, 4021.374), vec2(3564.421, 4083.808), vec2(3395.106, 4131.674), vec2(3224.049, 4177.492), vec2(3046.706, 4197.082), vec2(2840.822, 4215.812), vec2(2663.479, 4226.812), vec2(2486.731, 4192.919), vec2(2326.037, 4131.972), vec2(2152.262, 4067.159), vec2(1974.919, 3978.265), vec2(1796.387, 3887.289), vec2(1622.929, 3789.042), vec2(1457.181, 3677.255), vec2(1297.546, 3558.743), vec2(1138.042, 3440.118), vec2(977.943, 3321.790), vec2(817.843, 3203.463), vec2(665.772, 3080.676), vec2(522.024, 2958.483), vec2(504.335, 2819.938), vec2(503.889, 2666.826), vec2(502.848, 2516.687), vec2(502.106, 2366.690), vec2(501.363, 2216.692), vec2(503.594, 2071.451), vec2(501.959, 1978.989), vec2(498.256, 1803.780)
 
-
-vec2(2781.989, 2011.121),
-vec2(2781.636, 2055.690),
-
-vec2(2874.442, 2012.075),
-vec2(2873.603, 2055.337),
-
-
-vec2(3021.383, 2007.513),
-vec2(3022.640, 2054.259),
-
-
-vec2(3106.983, 2015.648),
-vec2(3107.691, 2055.619),
+DOWN TO TOP
+vec2(350.820, 1836.781), vec2(350.523, 1963.433), vec2(350.523, 2090.086), vec2(350.523, 2216.738), vec2(350.523, 2343.390), vec2(350.523, 2470.042), vec2(350.523, 2596.694), vec2(350.523, 2723.347), vec2(354.388, 2848.810), vec2(371.334, 2964.811), vec2(416.525, 3045.678), vec2(505.419, 3115.304), vec2(614.976, 3207.469), vec2(727.804, 3301.120), vec2(840.929, 3394.474), vec2(954.053, 3487.828), vec2(1078.773, 3576.723), vec2(1204.087, 3665.617), vec2(1329.402, 3754.214), vec2(1455.608, 3840.433), vec2(1584.787, 3917.732), vec2(1713.520, 3996.548), vec2(1842.699, 4074.145), vec2(1971.232, 4144.813), vec2(2100.114, 4203.679), vec2(2233.448, 4246.137), vec2(2383.438, 4299.057), vec2(2558.325, 4343.059), vec2(2744.885, 4354.059), vec2(2932.038, 4346.626), vec2(3099.273, 4327.301), vec2(3244.209, 4299.949), vec2(3383.497, 4266.354), vec2(3529.326, 4220.271), vec2(3746.507, 4148.026), vec2(3929.796, 4060.024), vec2(4096.733, 3964.589), vec2(4257.417, 3862.916), vec2(4408.895, 3759.156), vec2(4550.308, 3652.299), vec2(4682.758, 3542.891), vec2(4769.422, 3416.833), vec2(4849.546, 3288.397), vec2(4933.535, 3160.556), vec2(5016.334, 3032.417), vec2(5099.134, 2904.278), vec2(5181.934, 2776.139), vec2(5264.733, 2648.001), vec2(5316.316, 2503.807), vec2(5349.168, 2360.506), vec2(5378.155, 2216.015), vec2(5407.440, 2071.525), vec2(5430.184, 1927.034), vec2(5452.928, 1782.544), vec2(5420.076, 1643.107), vec2(5381.872, 1494.455), vec2(5338.911, 1346.694), vec2(5285.247, 1199.825), vec2(5234.557, 1048.199), vec2(5187.137, 894.789), vec2(5137.635, 741.974), vec2(5086.053, 589.753), vec2(5029.416, 440.803), vec2(4964.787, 298.078), vec2(4886.744, 152.101), vec2(4800.079, 44.047), vec2(4729.172, -22.251)
 */
