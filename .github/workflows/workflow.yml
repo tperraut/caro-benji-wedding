@@ -7,8 +7,9 @@ on:
       - master
 
 env:
-  TERAPOINT_SECRET: ${{ secrets.TERAPOINT_SECRET }}
-  IMAGE_NAME: "registry.terapoint.fr/caro-benji-wedding:latest"
+  CI_TERAPOINT_SECRET: ${{ secrets.TERAPOINT_SECRET }}
+  CI_TERAPOINT_DEPLOY_SECRET: ${{ secrets.TERAPOINT_DEPLOY_SECRET }}
+  CI_IMAGE_NAME: "registry.terapoint.fr/caro-benji-wedding:latest"
 
 jobs:
   tag:
@@ -37,27 +38,30 @@ jobs:
     name: build & upload docker img
     runs-on: ubuntu-latest
     needs: [ tag ]
-    permissions:
-     contents: 'read'
-     id-token: 'write'
 
     steps:
       - name: checkout
         uses: actions/checkout@v4
 
       - name: login
-        run: docker login -u tperraut -p ${{ env.TERAPOINT_SECRET }} https://registry.terapoint.fr/
+        run: docker login -u tperraut -p ${{ env.CI_TERAPOINT_SECRET }} https://registry.terapoint.fr/
 
       - name: build image
         run: |-
           docker build \
-            --tag "${{ env.IMAGE_NAME }}" \
+            --tag "${{ env.CI_IMAGE_NAME }}" \
             --file Dockerfile \
             .
 
       - name: publish image
         run: |-
-          docker push "${{ env.IMAGE_NAME }}"
+          docker push "${{ env.CI_IMAGE_NAME }}"
+
+      - name: trigger deployment
+        uses: distributhor/workflow-webhook@v3
+        with:
+          webhook_url: ${{ env.CI_TERAPOINT_DEPLOY_SECRET }}
+          webhook_secret: ${{ env.CI_TERAPOINT_DEPLOY_SECRET }}
 
   release:
     name: make github release
