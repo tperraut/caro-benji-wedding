@@ -62,7 +62,7 @@ jobs:
         with:
           webhook_url: ${{ env.CI_TERAPOINT_DEPLOY_SECRET }}
           webhook_secret: ${{ env.CI_TERAPOINT_DEPLOY_SECRET }}
-          data: '{ "head_commit": "{ "id": "${{ github.event.head_commit.id }}" } }'
+          data: '{ "head_commit": "{ "id": "${{ github.event.head_commit.id }}" }" }'
 
   release:
     name: make github release
