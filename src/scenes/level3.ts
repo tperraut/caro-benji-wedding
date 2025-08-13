@@ -1015,12 +1015,22 @@ export function createLevel3Scene() {
 
 
     function onEnnemiHit(sound: string[] = ["hit"]) {
+      if (!isReady) {
+        return;
+      }
       isReady = false;
       isMoving = false;
       play(sound[randi(0, sound.length)], {volume: 0.5});
+      const loops = 21;
       player.blink({
         duration: 3,
-        loops: 20,
+        loops: loops,
+        onLoop: (loop) => {
+          if (loop > Math.floor(loops / 1.5)) {
+            player.pos = player.lastGoodPos;
+            player.lastGoodPos = player.pos;
+          }
+        },
         onFinish: () => {
           player.pos = player.lastGoodPos;
           player.lastGoodPos = player.pos;
