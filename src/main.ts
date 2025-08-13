@@ -62,6 +62,8 @@ loadSprite("shopping_girl", "sprites/shopping_girl.png", {
 loadSprite("sport_car", "sprites/sport_car.png", {singular: true});
 loadSprite("hole", "sprites/hole.png", {singular: true});
 loadSprite("benji", "sprites/benjimoto.png", {singular: true});
+loadSprite("game_over", "sprites/game_over.jpg", {singular: true});
+loadSprite("game_win", "sprites/game_win.jpg", {singular: true});
 
 setGravity(1000);
 createInstructionsScene();

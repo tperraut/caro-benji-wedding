@@ -257,7 +257,8 @@ export function createLevel3Scene() {
       countdownTime -= dt();
       if (countdownTime <= 0) {
         countdownTime = 0;
-        // TODO : game over logic
+        go("instructions", {asset: "game_over", sceneToGo: "level3", animateToNext: false, tapText: "Tap to retry"});
+        return;
       }
       timerText.text = formatTime(Math.max(0, countdownTime));
 
