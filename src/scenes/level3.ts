@@ -1,68 +1,10 @@
-import {AreaComp, Comp, GameObj, PosComp, RotateComp, SpriteComp, Vec2} from "kaplay";
+import {GameObj, Vec2} from "kaplay";
+import {blink} from "../components/blink";
+import {followPath} from "../components/followPath";
+import {formatTime} from "../utils";
 
 const IS_DEBUG = false;
 
-function formatTime(seconds: number): string {
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = Math.floor(seconds % 60);
-  return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
-}
-
-interface FollowPathProps {
-  path: Vec2[];
-  speed?: number;
-  controlAngle?: boolean;
-  offsetY?: number;
-  destroyOnLast?: boolean;
-  onMove?: (self: GameObj, lastPos: Vec2, targetPos: Vec2, angle?: number) => void;
-}
-
-function followPath({path, speed = 100, controlAngle = true, offsetY = 0, destroyOnLast = false, onMove}: FollowPathProps): Comp {
-  let i = 0;
-  let targetPos = path[0];
-  let requires = ["pos"];
-
-  if (controlAngle) {
-    requires.push("rotate", "sprite", "area");
-  }
-
-  return {
-    id: "followPath",
-    require: requires,
-    update(this: GameObj<PosComp | SpriteComp | RotateComp | AreaComp | {speed?: number}>) {
-      const lastPos = this.pos;
-      const dist = this.pos.dist(targetPos);
-
-      if (dist < 1) {
-        if (destroyOnLast && i == path.length - 1) {
-          this.destroy();
-          return;
-        }
-        i = (i + 1) % path.length;
-        targetPos = path[i];
-
-        if (controlAngle) {
-          if (!this.flipX) {
-            this.flipX = true;
-          }
-          const dir = targetPos.sub(this.pos).unit();
-          const angle = dir.angle();
-          if (angle < -90 || angle > 90) {
-            this.flipY = true;
-            this.area.offset.y = -offsetY;
-          } else {
-            this.flipY = false;
-            this.area.offset.y = offsetY;
-          }
-
-          this.angle = angle;
-        }
-      }
-      onMove?.(this, lastPos, targetPos, this.angle);
-      this.moveTo(targetPos, this.speed || speed);
-    }
-  };
-}
 
 function drawHole(p: Vec2) {
   return add([
@@ -254,41 +196,25 @@ export function createLevel3Scene() {
     let targetPos = vec2(0, 0);
     let countdownTime = 120; // 2 minutes
 
-
     setGravity(0);
 
     add([pos(0, 0), rect(width(), height()), color("#FFFFFF")]);
-    const background = add(["background", sprite("level3BG", {fill: true}),
-      scale(vec2(1, 1)), anchor("topleft")]);
+    const background = add(["background", sprite("level3BG", {fill: true}), scale(vec2(1, 1)), anchor("topleft"),]);
 
+    const startPos = vec2(6103.13, 1909.93);
     const player = add([
       "player",
       sprite("benji"),
       scale(vec2(0.10, 0.10)),
-      pos(vec2(6103.13, 1909.93)),
+      pos(startPos),
       body({isStatic: false, maxVelocity: 0, gravityScale: 0}),
       area({shape: new Rect(vec2(0.0), 250, 200), cursor: "text", offset: vec2(-50, 80)}),
       anchor("center"),
       rotate(),
+      blink(),
       {
         speed: 200,
-        moveDirection: vec2(0, 0),
-        lastGoodPos: vec2(6039.13, 1909.93),
-        blink({duration = 0.5, loops = 1, onFinish}: {duration?: number, loops?: number, onFinish?: () => void}) {
-          let flashCount = 0;
-          const timeToWait = duration / loops;
-          const flash = () => {
-            if (flashCount >= loops) {
-              this.opacity = 1;
-              onFinish?.();
-              return;
-            };
-            this.opacity = this.opacity === 1 ? 0.5 : 1;
-            flashCount++;
-            wait(timeToWait, flash);
-          };
-          flash();
-        }
+        lastGoodPos: startPos,
       }
     ]);
 
@@ -300,7 +226,6 @@ export function createLevel3Scene() {
       pos(width() / 2, 50),
       anchor("center"),
       color(0, 0, 0),
-      outline(2, rgb(0, 0, 0)), // Black outline for better visibility
       layer("ui"),
       fixed(), // Stay in place when camera moves
     ]);
@@ -313,9 +238,8 @@ export function createLevel3Scene() {
       pos(width() - 10, height() - 10),
       anchor("botright"),
       color(0, 0, 0),
-      outline(2, rgb(0, 0, 0)), // Black outline for better visibility
       layer("ui"),
-      fixed(), // Stay in place when camera moves
+      fixed(),
     ]);
 
     // Get background dimensions for camera bounds
@@ -437,7 +361,6 @@ export function createLevel3Scene() {
       }
 
       player.angle = angle;
-      player.moveDirection = dir;
     });
 
     //#region DRAW ROAD
@@ -990,9 +913,9 @@ export function createLevel3Scene() {
         duration: 3,
         loops: 20,
         onFinish: () => {
-          player.pos = player.lastGoodPos; // Reset to last good position
-          player.lastGoodPos = player.pos; // Update last good position
-          isReady = true; // Allow movement again
+          player.pos = player.lastGoodPos;
+          player.lastGoodPos = player.pos;
+          isReady = true;
         }
       });
     }
@@ -1014,13 +937,11 @@ export function createLevel3Scene() {
     });
 
     player.onCollide("road", (o, col) => {
-      console.log("Collided with road", o.myId);
-      isMoving = false; // Stop moving when colliding with road
+      isMoving = false;
       if (col.hasOverlap()) {
-        player.moveBy(col.displacement.scale(2)); // Push player back slightly
+        player.moveBy(col.displacement.scale(2));
       }
     });
-
 
     player.onCollide("kebab", (obj) => {
       obj.destroy();

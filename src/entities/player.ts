@@ -1,4 +1,5 @@
-import {Anchor, Vec2, GameObj} from "kaplay";
+import {Anchor, GameObj, Vec2} from "kaplay";
+import {blink} from "../components/blink";
 
 export function createPlayer({idle, jump, hit, p, anch, onEnnemiHit}: {idle: string, jump?: string, hit: string, p: Vec2, anch?: Anchor, onEnnemiHit?: (v: GameObj) => void}) {
   const res = add([
@@ -10,6 +11,7 @@ export function createPlayer({idle, jump, hit, p, anch, onEnnemiHit}: {idle: str
     area(),
     animate(),
     body({jumpForce: 700}),
+    blink(),
     {
       hit: false,
       tryJump() {
@@ -19,21 +21,6 @@ export function createPlayer({idle, jump, hit, p, anch, onEnnemiHit}: {idle: str
           }
           this.jump();
         }
-      },
-      blink({duration = 0.5, loops = 1, onFinish}: {duration?: number, loops?: number, onFinish?: () => void}) {
-        let flashCount = 0;
-        const timeToWait = duration / loops;
-        const flash = () => {
-          if (flashCount >= loops) {
-            this.opacity = 1;
-            onFinish?.();
-            return;
-          };
-          this.opacity = this.opacity === 1 ? 0.5 : 1;
-          flashCount++;
-          wait(timeToWait, flash);
-        };
-        flash();
       }
     }
   ]);
