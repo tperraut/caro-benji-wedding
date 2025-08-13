@@ -61,7 +61,7 @@ loadSprite("panneau", "sprites/panneau.png", {singular: true});
 loadSprite("shopping_girl", "sprites/shopping_girl.png", {
   sliceX: 14,
   anims: {
-    move: {from: 0, to: 3, loop: true, speed: 7},
+    move: {from: 0, to: 10, loop: true, speed: 7},
   },
 });
 loadSprite("sport_car", "sprites/sport_car.png", {singular: true});
@@ -69,6 +69,14 @@ loadSprite("hole", "sprites/hole.png", {singular: true});
 loadSprite("benji", "sprites/benjimoto.png", {singular: true});
 loadSprite("game_over", "sprites/game_over.jpg", {singular: true});
 loadSprite("game_win", "sprites/game_win.jpg", {singular: true});
+loadSprite("water", "sprites/water.png", {singular: true});
+loadSprite("policeman", "sprites/policeman.png", {
+  sliceX: 4,
+  sliceY: 4,
+  anims: {
+    move: {frames: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0], loop: false, speed: 5},
+  },
+});
 
 setGravity(1000);
 createInstructionsScene();

@@ -188,17 +188,41 @@ function drawBoat(positions: Vec2[]) {
   ]);
 }
 
+
 function drawWater(positions: Vec2[]) {
   if (positions.length === 0) {
     return;
   }
   return add([
-    pos(0, 0),
-    polygon(positions, {fill: false}),
-    area(),
-    body({isStatic: true}),
-    outline(3, rgb(0, 0, 255), IS_DEBUG ? 1 : 0),
+    polygon(positions, {fill: true}),
+    color(144, 218, 237),
+    z(5),
     "water"
+  ]);
+}
+
+function drawPoliceMan(triggerPositions: Vec2[], spritePos: Vec2) {
+  let isPlaying = false;
+  const p = add([
+    pos(spritePos),
+    scale(0.5, 0.5),
+    sprite("policeman"),
+    anchor("center")
+  ])
+  return add([
+    area({shape: new Polygon(triggerPositions)}),
+    "police",
+    {
+      playAnim() {
+        if (isPlaying) return;
+        isPlaying = true;
+        p.play("move", {
+          onEnd() {
+            isPlaying = false;
+          }
+        });
+      }
+    }
   ]);
 }
 
@@ -246,6 +270,7 @@ export function createLevel3Scene() {
       anchor("center"),
       color(0, 0, 0),
       layer("ui"),
+      z(99),
       fixed(), // Stay in place when camera moves
     ]);
 
@@ -261,6 +286,7 @@ export function createLevel3Scene() {
       anchor("botright"),
       color(0, 0, 0),
       layer("ui"),
+      z(99),
       fixed(),
     ]);
 
@@ -938,6 +964,7 @@ export function createLevel3Scene() {
     //#endregion DRAW VEHICLES
 
     drawWater([
+      vec2(803.387, 1684.938), vec2(580.123, 1442.712), vec2(287.690, 1636.333), vec2(287.448, 1852.784), vec2(288.783, 2019.698)
     ]);
 
     drawBoat([
@@ -981,24 +1008,29 @@ export function createLevel3Scene() {
 
     drawSoundTrigger([vec2(4617.688, 233.771), vec2(5089.318, 223.548), vec2(5148.324, 365.833), vec2(4709.335, 378.806)], "tutu_verstapen")
 
+    drawPoliceMan(
+      [vec2(254.543, 2208.894), vec2(254.190, 2087.616), vec2(644.818, 2088.007), vec2(644.994, 2213.516)],
+      vec2(644.994, 2213.516),
+    );
+
+
+    function onEnnemiHit(sound: string[] = ["hit"]) {
+      isReady = false;
+      isMoving = false;
+      play(sound[randi(0, sound.length)], {volume: 0.5});
+      player.blink({
+        duration: 3,
+        loops: 20,
+        onFinish: () => {
+          player.pos = player.lastGoodPos;
+          player.lastGoodPos = player.pos;
+          isReady = true;
+        }
+      });
+    }
+
     if (ENABLE_COLLISION) {
-
-      function onEnnemiHit(sound: string[] = ["hit"]) {
-        isReady = false;
-        isMoving = false;
-        play(sound[randi(0, sound.length)], {volume: 0.5});
-        player.blink({
-          duration: 3,
-          loops: 20,
-          onFinish: () => {
-            player.pos = player.lastGoodPos;
-            player.lastGoodPos = player.pos;
-            isReady = true;
-          }
-        });
-      }
-
-      player.onCollide("sound_trigger", (obj, _) => {
+      player.onCollide("sound_trigger", (obj: GameObj<{playSound: () => void}>) => {
         obj.playSound()
       });
 
@@ -1016,6 +1048,11 @@ export function createLevel3Scene() {
 
       player.onCollide("car", () => {
         onEnnemiHit(["vehicle_hit"]);
+      });
+
+      player.onCollide("police", (obj: GameObj<{playAnim: () => void}>) => {
+        obj.playAnim()
+        onEnnemiHit(["ela"]);
       });
 
       player.onCollide("road", (o, col) => {
