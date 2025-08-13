@@ -64,5 +64,6 @@ createLevel1Scene();
 createLevel2Scene();
 createLevel3Scene();
 
-go("instructions", {asset: "startBG", sceneToGo: "instructions", isStart: true});
+// go("instructions", {asset: "startBG", sceneToGo: "instructions", isStart: true});
+go("instructions", {asset: "startBG", sceneToGo: "level3", isStart: true, duration: 1});
 // go("level2");

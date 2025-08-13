@@ -1,4 +1,4 @@
-import {GameObj, Vec2} from "kaplay";
+import {AreaComp, Comp, GameObj, PosComp, RotateComp, SpriteComp, Vec2} from "kaplay";
 
 const IS_DEBUG = false;
 
@@ -6,6 +6,62 @@ function formatTime(seconds: number): string {
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = Math.floor(seconds % 60);
   return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+}
+
+interface FollowPathProps {
+  path: Vec2[];
+  speed?: number;
+  controlAngle?: boolean;
+  offsetY?: number;
+  destroyOnLast?: boolean;
+  onMove?: (self: GameObj, lastPos: Vec2, targetPos: Vec2, angle?: number) => void;
+}
+
+function followPath({path, speed = 100, controlAngle = true, offsetY = 0, destroyOnLast = false, onMove}: FollowPathProps): Comp {
+  let i = 0;
+  let targetPos = path[0];
+  let requires = ["pos"];
+
+  if (controlAngle) {
+    requires.push("rotate", "sprite", "area");
+  }
+
+  return {
+    id: "followPath",
+    require: requires,
+    update(this: GameObj<PosComp | SpriteComp | RotateComp | AreaComp | {speed?: number}>) {
+      const lastPos = this.pos;
+      const dist = this.pos.dist(targetPos);
+
+      if (dist < 1) {
+        if (destroyOnLast && i == path.length - 1) {
+          this.destroy();
+          return;
+        }
+        i = (i + 1) % path.length;
+        targetPos = path[i];
+
+        if (controlAngle) {
+          if (!this.flipX) {
+            this.flipX = true;
+          }
+          const dir = targetPos.sub(this.pos).unit();
+          const angle = dir.angle();
+          if (angle < -90 || angle > 90) {
+            this.flipY = true;
+            this.area.offset.y = -offsetY;
+          } else {
+            this.flipY = false;
+            this.area.offset.y = offsetY;
+          }
+
+          this.angle = angle;
+        }
+      }
+      onMove?.(this, lastPos, targetPos, this.angle);
+      this.moveTo(targetPos, this.speed || speed);
+    }
+  };
 }
 
 function drawHole(p: Vec2) {
@@ -41,7 +97,7 @@ function drawBike(path: Vec2[]) {
   if (path.length < 2) {
     return;
   }
-  const b = add([
+  return add([
     pos(path[0]),
     sprite(randi() == 0 ? "bike_boy" : "bike_girl"),
     scale(0.06, 0.06),
@@ -50,38 +106,10 @@ function drawBike(path: Vec2[]) {
     body({isStatic: true}),
     rotate(),
     outline(3, rgb(255, 0, 0), IS_DEBUG ? 1 : 0),
+    followPath({path: path, offsetY: 80}),
     "bicycle",
     {path: path}
   ]);
-
-  let i = 1;
-  let targetPos = b.path[0];
-  b.onUpdate(() => {
-    const dist = b.pos.dist(targetPos);
-    if (dist < 1) {
-      i = (i + 1) % b.path.length;
-      targetPos = b.path[i];
-
-      if (!b.flipX) {
-        b.flipX = true;
-      }
-
-      // player.moveTo(targetPos, player.speed);
-
-      const dir = targetPos.sub(b.pos).unit();
-      const angle = dir.angle();
-      if (angle < -90 || angle > 90) {
-        b.flipY = true;
-        b.area.offset.y = -80;
-      } else {
-        b.flipY = false;
-        b.area.offset.y = 80;
-      }
-
-      b.angle = angle;
-    }
-    b.moveTo(targetPos, 100);
-  });
 }
 
 function drawKebab(p: Vec2) {
@@ -95,7 +123,7 @@ function drawKebab(p: Vec2) {
     outline(3, rgb(0, 255, 0), IS_DEBUG ? 1 : 0),
     "kebab"
   ]);
-  e.animate("scale", [vec2(0.05, 0.05), vec2(0.06, 0.06), vec2(0.05, 0.05)], {duration: 2})
+  e.animate("scale", [vec2(0.05, 0.05), vec2(0.065, 0.065), vec2(0.05, 0.05)], {duration: 2})
   return e;
 }
 
@@ -103,6 +131,10 @@ function drawPeople(peopleSpawns: {door: Vec2, road: Vec2}[]) {
   const startI = randi(0, peopleSpawns.length)
   const start = peopleSpawns[startI];
   const end = peopleSpawns[(startI * 2 + 1) % peopleSpawns.length];
+  const path = [
+    start.door, start.road, end.road, end.door
+  ]
+
   const p = add([
     pos(start.door),
     sprite("shopping_girl"),
@@ -111,29 +143,14 @@ function drawPeople(peopleSpawns: {door: Vec2, road: Vec2}[]) {
     area({collisionIgnore: ["hole", "road", "kebab", "people"]}),
     body({isStatic: true}),
     outline(3, rgb(255, 0, 0), IS_DEBUG ? 1 : 0),
-    "people"
+    followPath({
+      path: path, controlAngle: false, destroyOnLast: true, onMove(self, lastPos, targetPos, _) {
+        self.flipX = targetPos.x > lastPos.x;
+      },
+    }),
+    "people",
+    {speed: 50}
   ]);
-
-  const path = [
-    start.door, start.road, end.road, end.door
-  ]
-  let i = 0;
-  let targetPos = path[0];
-  p.onUpdate(() => {
-    const dist = p.pos.dist(targetPos);
-    if (dist < 1) {
-      if (i == path.length - 1) {
-        p.destroy();
-        return;
-      }
-      i = (i + 1) % path.length;
-      const lastPos = targetPos;
-      targetPos = path[i];
-
-      p.flipX = targetPos.x > lastPos.x;
-    }
-    p.moveTo(targetPos, 50);
-  });
 
   wait(randi(5, 15), () => drawPeople(peopleSpawns));
 }
@@ -980,21 +997,21 @@ export function createLevel3Scene() {
       });
     }
 
-    // player.onCollide("people", () => {
-    //   onEnnemiHit(["ela", "mo-joenge-toch"]);
-    // });
+    player.onCollide("people", () => {
+      onEnnemiHit(["ela", "mo-joenge-toch"]);
+    });
 
-    // player.onCollide("hole", () => {
-    //   onEnnemiHit(["god"]);
-    // });
+    player.onCollide("hole", () => {
+      onEnnemiHit(["god"]);
+    });
 
-    // player.onCollide("bicycle", () => {
-    //   onEnnemiHit(["ela", "paljas"]);
-    // });
+    player.onCollide("bicycle", () => {
+      onEnnemiHit(["ela", "paljas"]);
+    });
 
-    // player.onCollide("car", () => {
-    //   onEnnemiHit();
-    // });
+    player.onCollide("car", () => {
+      onEnnemiHit();
+    });
 
     player.onCollide("road", (o, col) => {
       console.log("Collided with road", o.myId);
