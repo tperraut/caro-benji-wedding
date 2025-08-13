@@ -3,6 +3,7 @@ interface InstructionsSceneProps {
   sceneToGo?: string;
   animateToNext?: boolean;
   tapText?: string;
+  isEnd?: boolean;
   duration?: number;
 }
 
@@ -12,6 +13,7 @@ export function createInstructionsScene() {
     sceneToGo = "level1",
     animateToNext = true,
     tapText = "Tap to start",
+    isEnd = false,
     duration = 7,
   }: InstructionsSceneProps) => {
     add([pos(0, 0), rect(width(), height()), color("#FFFFFF")])
@@ -21,6 +23,10 @@ export function createInstructionsScene() {
         go(sceneToGo, {});
       })
       bg.animate("opacity", [1, 1, 0], {duration: duration, loops: 1})
+      return;
+    }
+
+    if (isEnd) {
       return;
     }
 
