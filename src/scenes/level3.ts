@@ -1,9 +1,14 @@
-import {GameObj, Vec2} from "kaplay";
+import {AudioPlay, GameObj, Vec2} from "kaplay";
 import {blink} from "../components/blink";
 import {followPath} from "../components/followPath";
 import {formatTime} from "../utils";
 
 const IS_DEBUG = false;
+const ENABLE_COLLISION = true;
+const PLAYER_DEFAULT_SPEED = 200;
+
+let WIN_AUDIO_PLAYER: AudioPlay | null = null;
+let LOSE_AUDIO_PLAYER: AudioPlay | null = null;
 
 
 function drawHole(p: Vec2) {
@@ -154,6 +159,21 @@ function drawWin(path: Vec2[]) {
   ]);
 }
 
+function drawSoundTrigger(path: Vec2[], sound: string) {
+  if (path.length < 2) {
+    return;
+  }
+  const s = add([
+    area({shape: new Polygon(path)}),
+    rotate(),
+    "sound_trigger",
+    {
+      playSound: () => play(sound, {volume: 0.5})
+    }
+  ]);
+  return s;
+}
+
 function drawBoat(positions: Vec2[]) {
   if (positions.length === 0) {
     return;
@@ -184,7 +204,8 @@ function drawWater(positions: Vec2[]) {
 
 export function createLevel3Scene() {
   return scene("level3", () => {
-
+    WIN_AUDIO_PLAYER?.stop();
+    LOSE_AUDIO_PLAYER?.stop();
     // debug.inspect = IS_DEBUG;
 
     let isMoving = false;
@@ -203,16 +224,18 @@ export function createLevel3Scene() {
       sprite("benji"),
       scale(vec2(0.10, 0.10)),
       pos(startPos),
-      body({isStatic: false, maxVelocity: 0, gravityScale: 0}),
+      ENABLE_COLLISION ? body({isStatic: false, maxVelocity: 0, gravityScale: 0}) : {},
       area({shape: new Rect(vec2(0.0), 250, 200), offset: vec2(-50, 80)}),
       anchor("center"),
       rotate(),
       blink(),
       {
-        speed: 200,
+        speed: PLAYER_DEFAULT_SPEED,
         lastGoodPos: startPos,
       }
     ]);
+    const idlePlayerSoundPlayer = play("scooter_engine", {loop: true, volume: 0.2});
+    const movingPlayerSoundPlayer = play("scooter_acceleration", {paused: true, volume: 0.1});
 
     const timerText = add([
       text("00:00", {
@@ -252,6 +275,9 @@ export function createLevel3Scene() {
       countdownTime -= dt();
       if (countdownTime <= 0) {
         countdownTime = 0;
+        idlePlayerSoundPlayer.stop();
+        movingPlayerSoundPlayer.stop();
+        LOSE_AUDIO_PLAYER = play("game_over");
         go("instructions", {asset: "game_over", sceneToGo: "level3", animateToNext: false, tapText: "Tap to retry"});
         return;
       }
@@ -265,6 +291,22 @@ export function createLevel3Scene() {
 
       // Set camera position
       setCamPos(camX, camY);
+
+      if (isMoving) {
+        if (!idlePlayerSoundPlayer.paused) {
+          idlePlayerSoundPlayer.stop();
+        }
+        if (movingPlayerSoundPlayer.paused) {
+          movingPlayerSoundPlayer.play();
+        }
+      } else {
+        if (idlePlayerSoundPlayer.paused) {
+          idlePlayerSoundPlayer.play();
+        }
+        if (!movingPlayerSoundPlayer.paused) {
+          movingPlayerSoundPlayer.stop();
+        }
+      }
 
       if (!isMoving || !isReady) {
         return;
@@ -306,7 +348,7 @@ export function createLevel3Scene() {
       onKeyPress("space", () => {
         let toPrint = "";
         for (const p of positions) {
-          toPrint += `, vec2(${p.x}, ${p.y})`;
+          toPrint += `, vec2(${p.x.toFixed(3)}, ${p.y.toFixed(3)})`;
         }
         console.log(toPrint);
         for (const p of points) {
@@ -937,53 +979,65 @@ export function createLevel3Scene() {
       vec2(1071.888, 503.196), vec2(1103.089, 552.906), vec2(1094.098, 626.237), vec2(1072.769, 707.324), vec2(1050.735, 789.116), vec2(1027.995, 869.498)
     ])
 
-    function onEnnemiHit(sound: string[] = ["hit"]) {
-      isReady = false;
-      isMoving = false;
-      play(sound[randi(0, sound.length)], {volume: 0.5});
-      player.blink({
-        duration: 3,
-        loops: 20,
-        onFinish: () => {
-          player.pos = player.lastGoodPos;
-          player.lastGoodPos = player.pos;
-          isReady = true;
+    drawSoundTrigger([vec2(4617.688, 233.771), vec2(5089.318, 223.548), vec2(5148.324, 365.833), vec2(4709.335, 378.806)], "tutu_verstapen")
+
+    if (ENABLE_COLLISION) {
+
+      function onEnnemiHit(sound: string[] = ["hit"]) {
+        isReady = false;
+        isMoving = false;
+        play(sound[randi(0, sound.length)], {volume: 0.5});
+        player.blink({
+          duration: 3,
+          loops: 20,
+          onFinish: () => {
+            player.pos = player.lastGoodPos;
+            player.lastGoodPos = player.pos;
+            isReady = true;
+          }
+        });
+      }
+
+      player.onCollide("sound_trigger", (obj, _) => {
+        obj.playSound()
+      });
+
+      player.onCollide("people", () => {
+        onEnnemiHit(["ela", "mo-joenge-toch"]);
+      });
+
+      player.onCollide("hole", () => {
+        onEnnemiHit(["god"]);
+      });
+
+      player.onCollide("bicycle", () => {
+        onEnnemiHit(["ela", "paljas"]);
+      });
+
+      player.onCollide("car", () => {
+        onEnnemiHit(["vehicle_hit"]);
+      });
+
+      player.onCollide("road", (o, col) => {
+        isMoving = false;
+        if (col.hasOverlap()) {
+          player.moveBy(col.displacement.scale(2));
         }
       });
+
+      player.onCollide("kebab", (obj) => {
+        obj.destroy();
+        play("kebab");
+        player.speed += 25;
+        maxSpeedText.text = `Max Speed: ${calculateShownSpeed(player.speed)}`;
+      });
+
+      player.onCollide("win", () => {
+        idlePlayerSoundPlayer.stop();
+        movingPlayerSoundPlayer.stop();
+        WIN_AUDIO_PLAYER = play("game_win");
+        go("instructions", {asset: "game_win", sceneToGo: "level3", animateToNext: false, isEnd: true});
+      })
     }
-
-    player.onCollide("people", () => {
-      onEnnemiHit(["ela", "mo-joenge-toch"]);
-    });
-
-    player.onCollide("hole", () => {
-      onEnnemiHit(["god"]);
-    });
-
-    player.onCollide("bicycle", () => {
-      onEnnemiHit(["ela", "paljas"]);
-    });
-
-    player.onCollide("car", () => {
-      onEnnemiHit();
-    });
-
-    player.onCollide("road", (o, col) => {
-      isMoving = false;
-      if (col.hasOverlap()) {
-        player.moveBy(col.displacement.scale(2));
-      }
-    });
-
-    player.onCollide("win", () => {
-      go("instructions", {asset: "game_win", sceneToGo: "level3", animateToNext: false, isEnd: true});
-    })
-
-    player.onCollide("kebab", (obj) => {
-      obj.destroy();
-      play("kebab");
-      player.speed += 25;
-      maxSpeedText.text = `Max Speed: ${calculateShownSpeed(player.speed)}`;
-    });
   });
 }
