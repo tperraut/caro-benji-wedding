@@ -53,7 +53,12 @@ loadSprite("double_bike", "sprites/double_bike.png", {singular: true});
 loadSprite("kebab", "sprites/kebab.png", {singular: true});
 loadSprite("maire", "sprites/maire.png", {singular: true});
 loadSprite("panneau", "sprites/panneau.png", {singular: true});
-loadSprite("shopping_girl", "sprites/shopping_girl.png", {singular: true});
+loadSprite("shopping_girl", "sprites/shopping_girl.png", {
+  sliceX: 14,
+  anims: {
+    move: {from: 0, to: 3, loop: true, speed: 7},
+  },
+});
 loadSprite("sport_car", "sprites/sport_car.png", {singular: true});
 loadSprite("hole", "sprites/hole.png", {singular: true});
 loadSprite("benji", "sprites/benjimoto.png", {singular: true});
@@ -64,6 +69,6 @@ createLevel1Scene();
 createLevel2Scene();
 createLevel3Scene();
 
-// go("instructions", {asset: "startBG", sceneToGo: "instructions", isStart: true});
-go("instructions", {asset: "startBG", sceneToGo: "level3", isStart: true, duration: 1});
+// go("instructions", {asset: "startBG", sceneToGo: "instructions", animateToNext: false});
+go("instructions", {asset: "startBG", sceneToGo: "level3", animateToNext: false});
 // go("level2");

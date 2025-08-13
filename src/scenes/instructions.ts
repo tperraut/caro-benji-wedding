@@ -1,7 +1,8 @@
 interface InstructionsSceneProps {
   asset?: string;
   sceneToGo?: string;
-  isStart?: boolean;
+  animateToNext?: boolean;
+  tapText?: string;
   duration?: number;
 }
 
@@ -9,20 +10,22 @@ export function createInstructionsScene() {
   return scene("instructions", ({
     asset = "level1",
     sceneToGo = "level1",
-    isStart = false,
+    animateToNext = true,
+    tapText = "Tap to start",
     duration = 7,
   }: InstructionsSceneProps) => {
     add([pos(0, 0), rect(width(), height()), color("#FFFFFF")])
     const bg = add([sprite(asset), animate(), scale(0.5)])
-    if (!isStart) {
+    if (animateToNext) {
       bg.onAnimateFinished(() => {
         go(sceneToGo, {});
       })
       bg.animate("opacity", [1, 1, 0], {duration: duration, loops: 1})
       return;
     }
+
     const t = add([
-      text("Tap to start"),
+      text(tapText),
       pos(center().x, height() - 120), color("#000000"),
       anchor("center"),
       animate(),

@@ -72,15 +72,19 @@ function drawKebab(p: Vec2) {
 function drawPeople(peopleSpawns: {door: Vec2, road: Vec2}[]) {
   const startI = randi(0, peopleSpawns.length)
   const start = peopleSpawns[startI];
-  const end = peopleSpawns[(startI * 2 + 1) % peopleSpawns.length];
+  let endI = randi(0, peopleSpawns.length)
+  if (endI == startI) {
+    endI = (endI + 1) % peopleSpawns.length;
+  }
+  const end = peopleSpawns[endI];
   const path = [
     start.door, start.road, end.road, end.door
   ]
 
   const p = add([
     pos(start.door),
-    sprite("shopping_girl"),
-    scale(0.06, 0.06),
+    sprite("shopping_girl", {anim: "move"}),
+    scale(0.3, 0.3),
     anchor("center"),
     area({collisionIgnore: ["hole", "road", "kebab", "people"]}),
     body({isStatic: true}),
@@ -213,7 +217,7 @@ export function createLevel3Scene() {
       rotate(),
       blink(),
       {
-        speed: 200,
+        speed: 1200,
         lastGoodPos: startPos,
       }
     ]);
