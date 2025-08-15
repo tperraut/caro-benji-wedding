@@ -117,17 +117,22 @@ function drawPeople(peopleSpawns: {door: Vec2, road: Vec2}[]) {
   wait(randi(5, 15), () => drawPeople(peopleSpawns));
 }
 
-const takenStartPositions: {[key: number]: boolean} = {};
+const takenStartPositions: {[key: string]: boolean} = {};
 const jewAssets = ["shalom1", "shalom2"];
 function drawJew(path: Vec2[]) {
-  let start = randi(path.length);
-  while (takenStartPositions[start]) {
-    start = (start + 1) % path.length;
+  path = shuffle(path);
+  let startI = randi(path.length);
+  let start = path[startI];
+  let key = start.toString();
+  while (takenStartPositions[key]) {
+    startI = randi(path.length);
+    start = path[startI];
+    key = start.toString();
   }
-  takenStartPositions[start] = true;
+  takenStartPositions[key] = true;
 
   const p = add([
-    pos(path[start]),
+    pos(start),
     sprite(jewAssets[randi(jewAssets.length)]),
     scale(0.07, 0.07),
     anchor("center"),
@@ -136,8 +141,8 @@ function drawJew(path: Vec2[]) {
     rotate(20),
     animate(),
     followPath({
-      startI: start,
-      path: path,
+      startI: startI,
+      path: shuffle(path),
       controlAngle: false,
       pauseDelay: 2,
       onMove(self, lastTargetPos, targetPos, angle) {
