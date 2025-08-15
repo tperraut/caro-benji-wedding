@@ -49,7 +49,11 @@ loadSound("scooter_acceleration", "sounds/scooter_acceleration.ogg");
 loadSound("jews", "sounds/jews.ogg");
 
 loadSprite("level3", "sprites/level_3.jpg", {singular: true});
-loadSprite("level3BG", "sprites/level_3_bg.jpg", {singular: true});
+if (isTouchscreen()) {
+  loadSprite("level3BG", "sprites/level_3_bg_mobile.jpg", {singular: true});
+} else {
+  loadSprite("level3BG", "sprites/level_3_bg.jpg", {singular: true});
+}
 loadSprite("bike_girl", "sprites/bike_girl.png", {singular: true});
 loadSprite("bike_boy", "sprites/bike_boy.png", {singular: true});
 loadSprite("camion_red", "sprites/camion_red.png", {singular: true});

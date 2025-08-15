@@ -353,6 +353,7 @@ function drawPoliceMan(triggerPositions: Vec2[], spritePos: Vec2) {
 
 export function createLevel3Scene() {
   return scene("level3", () => {
+    setCamScale(2)
     WIN_AUDIO_PLAYER?.stop();
     LOSE_AUDIO_PLAYER?.stop();
     debug.inspect = IS_DEBUG;
@@ -364,7 +365,12 @@ export function createLevel3Scene() {
     setGravity(0);
 
     add([pos(0, 0), rect(width(), height()), color("#FFFFFF")]);
-    const background = add(["background", sprite("level3BG", {fill: true}), scale(vec2(1, 1)), anchor("topleft"),]);
+    const background = add([
+      "background",
+      sprite("level3BG", {fill: true}),
+      isTouchscreen() ? scale(vec2(1.5769, 1.5769)) : scale(vec2(1, 1)),
+      anchor("topleft"),
+    ]);
 
     const startPos = vec2(6103.13, 1909.93);
     const player = add([
