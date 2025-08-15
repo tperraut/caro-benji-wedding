@@ -471,7 +471,7 @@ export function createLevel3Scene() {
     });
 
     onDraw(() => {
-      if (isMoving || !player.isReady) return;
+      if (isMoving || !player.isReady || isTouchscreen()) return;
 
       const worldMousePos = toWorld(mousePos());
 
