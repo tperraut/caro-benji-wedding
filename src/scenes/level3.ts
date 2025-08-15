@@ -302,7 +302,8 @@ function drawBoat({path, takeArea, dropPoint, stops}: BoatProps) {
   b.onUpdate(() => {
     if (player == null) return;
     player.pos = b.pos;
-    if (player != null && b.hasPoint(dropPoint)) {
+    if (player != null && b.hasPoint(dropPoint) && b.isPaused) {
+      player.lastGoodPos = dropPoint;
       player.pos = dropPoint;
       player.isReady = true;
       player = null;
