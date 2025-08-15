@@ -8,10 +8,18 @@ interface FollowPathProps {
   offsetY?: number;
   destroyOnLast?: boolean;
   pauseDelay?: number;
+  flipX?: boolean;
   onMove?: (self: GameObj, lastPos: Vec2, targetPos: Vec2, angle?: number) => void;
 }
 
-export function followPath({path, startI = 0, speed = 100, controlAngle = true, offsetY = 0, destroyOnLast = false, pauseDelay = 0, onMove}: FollowPathProps): Comp {
+/**
+ * @group Component Types
+ */
+interface FollowPathComp extends Comp {
+  id: string;
+}
+
+export function followPath({path, startI = 0, speed = 100, controlAngle = true, offsetY = 0, destroyOnLast = false, pauseDelay = 0, flipX = true, onMove}: FollowPathProps): FollowPathComp {
   let i = startI;
   let lastTargetPos: Vec2 | null = null;
   let targetPos = path[i];
@@ -44,9 +52,7 @@ export function followPath({path, startI = 0, speed = 100, controlAngle = true, 
         targetPos = path[i];
 
         if (controlAngle) {
-          if (!this.flipX) {
-            this.flipX = true;
-          }
+          this.flipX = flipX;
           const dir = targetPos.sub(this.pos).unit();
           const angle = dir.angle();
           if (angle < -90 || angle > 90) {

@@ -80,6 +80,7 @@ loadSprite("policeman", "sprites/policeman.png", {
 });
 loadSprite("shalom1", "sprites/shalom1.png", {singular: true});
 loadSprite("shalom2", "sprites/shalom2.png", {singular: true});
+loadSprite("boat", "sprites/boat.png", {singular: true});
 
 setGravity(1000);
 createInstructionsScene();

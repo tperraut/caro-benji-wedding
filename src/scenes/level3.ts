@@ -115,6 +115,7 @@ function drawPeople(peopleSpawns: {door: Vec2, road: Vec2}[]) {
   ]);
 
   wait(randi(5, 15), () => drawPeople(peopleSpawns));
+  return p;
 }
 
 const takenStartPositions: {[key: string]: boolean} = {};
@@ -153,13 +154,13 @@ function drawJew(path: Vec2[]) {
     {speed: 50, isPaused: false}
   ]);
 
-  (p as unknown as AnimateComp).animate("angle", [-10, 10], {duration: 0.2, direction: "ping-pong"});
+  p.animate("angle", [-10, 10], {duration: 0.2, direction: "ping-pong"});
   p.onUpdate(() => {
     if (p.isPaused) {
       p.angle = 0;
       return;
     }
-    (p as unknown as AnimateComp).animation.paused = p.isPaused;
+    p.animation.paused = p.isPaused;
   });
 
   return p;
@@ -230,18 +231,85 @@ function drawSoundTrigger(path: Vec2[], sound: string) {
   return s;
 }
 
-function drawBoat(positions: Vec2[]) {
-  if (positions.length === 0) {
-    return;
-  }
-  return add([
-    pos(0, 0),
-    polygon(positions, {fill: false}),
-    area(),
-    body({isStatic: true}),
-    outline(3, rgb(0, 255, 0), IS_DEBUG ? 1 : 0),
-    "boat"
+interface BoatProps {
+  path: Vec2[],
+  takeArea: Vec2[],
+  dropPoint: Vec2,
+  stops: Vec2[][]
+}
+
+function drawBoat({path, takeArea, dropPoint, stops}: BoatProps) {
+  if (path.length < 2) return;
+  let player: GameObj | null = null;
+
+  const b = add([
+    pos(path[0]),
+    sprite("boat"),
+    scale(0.3, 0.3),
+    anchor("center"),
+    area({shape: new Rect(vec2(0, 0), 100, 50), collisionIgnore: ["win"]}),
+    rotate(),
+    followPath({
+      path: path,
+      controlAngle: true,
+      flipX: false,
+    }),
+    z(999),
+    "boat",
+    {speed: 80, isPaused: false}
   ]);
+  b.area.shape = new Rect(vec2(0, 0), b.width, b.height + 500);
+
+  const a = add([
+    area({shape: new Polygon(takeArea)}),
+    "take_area"
+  ])
+
+
+  let playerInArea: GameObj | null = null;
+  function takePlayer(obj: GameObj) {
+    player = obj;
+    player.isReady = false;
+  }
+
+  a.onCollide("player", (obj) => {
+    playerInArea = obj;
+    if (b.isColliding(a) && b.isPaused) {
+      takePlayer(obj);
+    }
+  })
+  a.onCollideEnd("player", (_) => {
+    playerInArea = undefined;
+  })
+
+  for (const stop of stops) {
+    add([
+      area({shape: new Polygon(stop)}),
+      "stop_area"
+    ]);
+  }
+
+  b.onCollide("stop_area", () => {
+    b.isPaused = true;
+    wait(5, () => {
+      b.isPaused = false;
+    });
+    if (b.isColliding(a) && playerInArea) {
+      takePlayer(playerInArea);
+    }
+  })
+
+  b.onUpdate(() => {
+    if (player == null) return;
+    player.pos = b.pos;
+    if (player != null && b.hasPoint(dropPoint)) {
+      player.pos = dropPoint;
+      player.isReady = true;
+      player = null;
+    }
+  });
+
+  return b;
 }
 
 
@@ -286,10 +354,9 @@ export function createLevel3Scene() {
   return scene("level3", () => {
     WIN_AUDIO_PLAYER?.stop();
     LOSE_AUDIO_PLAYER?.stop();
-    // debug.inspect = IS_DEBUG;
+    debug.inspect = IS_DEBUG;
 
     let isMoving = false;
-    let isReady = true;
     let targetPos = vec2(0, 0);
     let countdownTime = 180; // 3 minutes
 
@@ -312,6 +379,7 @@ export function createLevel3Scene() {
       {
         speed: PLAYER_DEFAULT_SPEED,
         lastGoodPos: startPos,
+        isReady: true
       }
     ]);
     const idlePlayerSoundPlayer = play("scooter_engine", {loop: true, volume: 0.2});
@@ -390,7 +458,7 @@ export function createLevel3Scene() {
         }
       }
 
-      if (!isMoving || !isReady) {
+      if (!isMoving || !player.isReady) {
         return;
       }
       const dist = player.pos.dist(targetPos);
@@ -403,7 +471,7 @@ export function createLevel3Scene() {
     });
 
     onDraw(() => {
-      if (isMoving || !isReady) return;
+      if (isMoving || !player.isReady) return;
 
       const worldMousePos = toWorld(mousePos());
 
@@ -462,7 +530,7 @@ export function createLevel3Scene() {
 
 
     onClick(() => {
-      if (isMoving || !isReady) return;
+      if (isMoving || !player.isReady) return;
 
       targetPos = toWorld(mousePos());
       player.lastGoodPos = player.pos; // Save last good position
@@ -554,14 +622,6 @@ export function createLevel3Scene() {
 
     drawRoad([
       vec2(1774.302, 217.295), vec2(1765.105, 491.075), vec2(1502.644, 491.429), vec2(1488.495, 222.955)
-    ]);
-
-    drawRoad([
-      vec2(1396.211, 886.706), vec2(1439.011, 785.188), vec2(1474.383, 688.268), vec2(1502.681, 595.240), vec2(1511.878, 514.591), vec2(1514.707, 429.698), vec2(1505.157, 357.185), vec2(1289.741, 395.387), vec2(1171.598, 408.121), vec2(1196.712, 631.673)
-    ]);
-
-    drawRoad([
-      vec2(1335.342, 1019.449), vec2(1259.645, 1165.182), vec2(1197.390, 1275.543), vec2(976.315, 1116.368), vec2(1067.575, 991.859)
     ]);
 
     drawRoad([
@@ -956,6 +1016,70 @@ export function createLevel3Scene() {
     drawRoad([
       vec2(1962.461, 1088.083), vec2(2163.946, 1090.916), vec2(2166.776, 1206.229), vec2(1976.120, 1393.702)
     ]);
+
+    drawRoad([
+      vec2(900.501, 1122.033), vec2(991.421, 1258.077), vec2(941.281, 1301.197), vec2(845.682, 1197.241)
+    ]);
+
+    drawRoad([
+      vec2(1153.203, 1327.938), vec2(1105.070, 1397.799), vec2(945.292, 1281.141), vec2(986.072, 1240.027)
+    ]);
+
+    drawRoad([
+      vec2(1153.203, 1327.938), vec2(1105.070, 1397.799), vec2(945.292, 1281.141), vec2(986.072, 1240.027)
+    ]);
+
+    drawRoad([
+      vec2(302.173, 1622.423), vec2(159.109, 1706.992), vec2(2.674, 1789.554), vec2(4.680, 1555.905), vec2(4.680, 1320.919), vec2(5.348, 1087.270), vec2(5.348, 854.958), vec2(5.348, 638.022), vec2(264.735, 631.671), vec2(302.173, 859.304), vec2(302.173, 1073.565), vec2(302.173, 1287.827)
+    ]);
+
+    drawRoad([
+      vec2(259.387, 865.956), vec2(432.535, 716.541), vec2(241.337, 665.398)
+    ]);
+
+    drawRoad([
+      vec2(871.755, 748.630), vec2(396.435, 754.981), vec2(292.145, 749.967), vec2(153.092, 596.541), vec2(838.329, 575.482)
+    ]);
+
+    drawRoad([
+      vec2(916.535, 1266.647), vec2(770.796, 1012.274), vec2(568.234, 1017.288), vec2(567.565, 1268.987), vec2(568.234, 1481.912)
+    ]);
+
+    drawRoad([
+      vec2(558.886, 1451.189), vec2(569.582, 1440.159), vec2(572.925, 1616.983), vec2(573.593, 1797.150), vec2(570.251, 1967.958), vec2(815.599, 1825.228), vec2(822.284, 1617.652), vec2(719.331, 1379.992)
+    ]);
+
+    drawRoad([
+      vec2(301.504, 1618.654), vec2(300.836, 1762.053), vec2(294.819, 1914.142), vec2(296.156, 2046.175), vec2(177.827, 2096.081), vec2(177.827, 1886.499), vec2(177.159, 1684.939), vec2(185.850, 1576.304)
+    ]);
+
+    drawRoad([
+      vec2(1202.298, 1274.061), vec2(1109.209, 1239.685), vec2(1022.643, 1180.720), vec2(939.590, 1056.517), vec2(953.893, 1029.670), vec2(1220.615, 1242.696)
+    ]);
+
+    drawRoad([
+      vec2(1200.061, 1276.267), vec2(1342.655, 1021.204), vec2(1326.875, 1011.163), vec2(1183.707, 1260.487)
+    ]);
+
+    drawRoad([
+      vec2(1319.931, 1024.277), vec2(1336.285, 1031.450), vec2(1448.467, 763.763), vec2(1429.244, 758.886)
+    ]);
+
+    drawRoad([
+      vec2(1425.227, 772.657), vec2(1440.433, 779.830), vec2(1500.971, 593.626), vec2(1476.584, 589.896)
+    ]);
+
+    drawRoad([
+      vec2(1477.732, 595.634), vec2(1500.397, 599.364), vec2(1515.604, 466.525), vec2(1488.347, 468.533)
+    ]);
+
+    drawRoad([
+      vec2(947.436, 1044.849), vec2(1053.306, 833.397), vec2(1059.331, 836.553), vec2(959.199, 1053.170)
+    ]);
+
+    drawRoad([
+      vec2(1015.042, 862.766), vec2(1041.151, 867.643), vec2(1064.390, 818.008), vec2(1033.691, 813.130)
+    ]);
     //#endregion DRAW ROAD
 
     //#region DRAW HOLES
@@ -1023,9 +1147,6 @@ export function createLevel3Scene() {
       vec2(803.387, 1684.938), vec2(580.123, 1442.712), vec2(287.690, 1636.333), vec2(287.448, 1852.784), vec2(288.783, 2019.698)
     ]);
 
-    drawBoat([
-    ]);
-
     drawKebab(vec2(4897.682, 2120.561));
     drawKebab(vec2(4452.283, 2180.264));
     drawKebab(vec2(3707.700, 2930.507));
@@ -1080,11 +1201,20 @@ export function createLevel3Scene() {
     drawJew(jewPath);
     drawJew(jewPath);
 
+    drawBoat({
+      path: [
+        vec2(1122.360, -56.136), vec2(1157.092, 77.931), vec2(1198.076, 228.669), vec2(1261.984, 399.551), vec2(1278.655, 499.928), vec2(1217.527, 641.288), vec2(1161.260, 783.343), vec2(1102.215, 924.703), vec2(1009.138, 1048.868), vec2(930.921, 1185.581), vec2(850.698, 1322.294), vec2(731.701, 1406.194), vec2(610.030, 1495.442), vec2(481.803, 1596.138), vec2(349.436, 1696.082), vec2(232.646, 1745.218), vec2(126.351, 1806.388), vec2(28.078, 1848.171), vec2(37.437, 2035.023), vec2(197.883, 1938.422), vec2(404.457, 1816.416), vec2(598.329, 1695.748), vec2(807.577, 1563.714), vec2(955.320, 1417.642), vec2(1093.705, 1253.519), vec2(1193.315, 1091.402), vec2(1269.413, 924.123), vec2(1336.933, 754.652), vec2(1389.747, 579.833), vec2(1401.780, 409.694), vec2(1370.988, 239.457), vec2(1318.843, 76.462), vec2(1288.759, -32.507)
+      ],
+      takeArea: [vec2(1398.661, 895.738), vec2(1339.162, 1014.401), vec2(1427.407, 1062.869), vec2(1478.215, 964.930)],
+      dropPoint: vec2(964.120, 948.552),
+      stops: [[vec2(1384.427, 768.603), vec2(1460.458, 795.286), vec2(1469.926, 768.029), vec2(1407.093, 739.625)], [vec2(972.466, 1048.343), vec2(954.965, 1074.452), vec2(926.561, 1057.524), vec2(940.619, 1030.267)]]
+    });
+
     function onEnnemiHit(sound: string[] = ["hit"]) {
-      if (!isReady) {
+      if (!player.isReady) {
         return;
       }
-      isReady = false;
+      player.isReady = false;
       isMoving = false;
       play(sound[randi(0, sound.length)], {volume: VOLUME_DEFAULT});
       const loops = 21;
@@ -1100,15 +1230,18 @@ export function createLevel3Scene() {
         onFinish: () => {
           player.pos = player.lastGoodPos;
           player.lastGoodPos = player.pos;
-          isReady = true;
+          player.isReady = true;
         }
       });
     }
 
-    player.onCollide("sound_trigger", (obj: GameObj<{playSound: () => void}>) => {
-      obj.playSound()
+    player.onCollide("road", (o, col) => {
+      console.log(o.myId)
     });
     if (ENABLE_COLLISION) {
+      player.onCollide("sound_trigger", (obj: GameObj<{playSound: () => void}>) => {
+        obj.playSound()
+      });
 
       player.onCollide("people", () => {
         onEnnemiHit(["ela", "mo-joenge-toch"]);
@@ -1132,6 +1265,7 @@ export function createLevel3Scene() {
       });
 
       player.onCollide("road", (o, col) => {
+        if (!player.isReady) return;
         isMoving = false;
         if (col.hasOverlap()) {
           player.moveBy(col.displacement.scale(2));
@@ -1139,6 +1273,7 @@ export function createLevel3Scene() {
       });
 
       player.onCollide("kebab", (obj) => {
+        if (!player.isReady) return;
         obj.destroy();
         play("kebab");
         player.speed += 25;
@@ -1146,6 +1281,7 @@ export function createLevel3Scene() {
       });
 
       player.onCollide("win", () => {
+        if (!player.isReady) return;
         idlePlayerSoundPlayer.stop();
         movingPlayerSoundPlayer.stop();
         WIN_AUDIO_PLAYER = play("game_win");
