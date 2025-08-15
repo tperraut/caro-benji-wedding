@@ -77,6 +77,8 @@ loadSprite("policeman", "sprites/policeman.png", {
     move: {frames: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0], loop: false, speed: 5},
   },
 });
+loadSprite("shalom1", "sprites/shalom1.png", {singular: true});
+loadSprite("shalom2", "sprites/shalom2.png", {singular: true});
 
 setGravity(1000);
 createInstructionsScene();

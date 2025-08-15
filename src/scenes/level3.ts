@@ -1,4 +1,4 @@
-import {AudioPlay, GameObj, Vec2} from "kaplay";
+import {AnimateComp, AudioPlay, GameObj, Vec2} from "kaplay";
 import {blink} from "../components/blink";
 import {followPath} from "../components/followPath";
 import {formatTime} from "../utils";
@@ -6,6 +6,7 @@ import {formatTime} from "../utils";
 const IS_DEBUG = false;
 const ENABLE_COLLISION = true;
 const PLAYER_DEFAULT_SPEED = 200;
+const VOLUME_DEFAULT = 0.25;
 
 let WIN_AUDIO_PLAYER: AudioPlay | null = null;
 let LOSE_AUDIO_PLAYER: AudioPlay | null = null;
@@ -116,6 +117,39 @@ function drawPeople(peopleSpawns: {door: Vec2, road: Vec2}[]) {
   wait(randi(5, 15), () => drawPeople(peopleSpawns));
 }
 
+const takenStartPositions: {[key: number]: boolean} = {};
+const jewAssets = ["shalom1", "shalom2"];
+function drawJew(path: Vec2[]) {
+  let start = randi(path.length);
+  while (takenStartPositions[start]) {
+    start = (start + 1) % path.length;
+  }
+  takenStartPositions[start] = true;
+
+  const p = add([
+    pos(path[start]),
+    sprite(jewAssets[randi(jewAssets.length)]),
+    scale(0.1, 0.1),
+    anchor("center"),
+    area({collisionIgnore: ["hole", "road", "kebab", "people"]}),
+    body({isStatic: true}),
+    rotate(20),
+    animate(),
+    followPath({
+      startI: start,
+      path: path,
+      controlAngle: false,
+      pauseDelay: 3,
+    }),
+    "people",
+    {speed: 50, isPaused: false}
+  ]);
+
+  (p as unknown as AnimateComp).animate("angle", [-10, 10], {duration: 0.2, direction: "ping-pong"});
+
+  return p;
+}
+
 const VEHICLE_DATA = {
   "sport_car": {scale: 0.17, speed: 250, zIndex: 1},
   "car": {scale: 0.15, speed: 150, zIndex: 2},
@@ -168,7 +202,7 @@ function drawSoundTrigger(path: Vec2[], sound: string) {
     rotate(),
     "sound_trigger",
     {
-      playSound: () => play(sound, {volume: 0.5})
+      playSound: () => play(sound, {volume: VOLUME_DEFAULT})
     }
   ]);
   return s;
@@ -1013,6 +1047,15 @@ export function createLevel3Scene() {
       vec2(644.994, 2213.516),
     );
 
+    const jewPath = [
+      vec2(3811.081, 1140.970), vec2(3727.034, 1076.301), vec2(3753.182, 1148.908), vec2(3683.610, 1134.200), vec2(3624.310, 1077.935), vec2(3608.435, 1154.278), vec2(3558.474, 1148.908), vec2(3517.173, 1087.535), vec2(3472.348, 1137.262), vec2(3396.239, 1148.702), vec2(3398.107, 1191.426), vec2(3611.959, 1192.126), vec2(3612.893, 1299.286), vec2(3675.461, 1317.729), vec2(3634.838, 1368.391), vec2(3617.562, 1422.787), vec2(3672.192, 1473.449), vec2(3717.017, 1513.371), vec2(3632.503, 1588.780), vec2(3864.099, 1448.935), vec2(3799.261, 1424.665), vec2(3709.611, 1412.291), vec2(3735.787, 1352.359), vec2(3782.013, 1316.639), vec2(3831.040, 1370.102), vec2(3856.254, 1323.643), vec2(3841.312, 1261.776), vec2(3808.627, 1143.410)
+    ]
+    drawJew(jewPath);
+    drawJew(jewPath);
+    drawJew(jewPath);
+    drawJew(jewPath);
+    drawJew(jewPath);
+    drawJew(jewPath);
 
     function onEnnemiHit(sound: string[] = ["hit"]) {
       if (!isReady) {
@@ -1020,7 +1063,7 @@ export function createLevel3Scene() {
       }
       isReady = false;
       isMoving = false;
-      play(sound[randi(0, sound.length)], {volume: 0.5});
+      play(sound[randi(0, sound.length)], {volume: VOLUME_DEFAULT});
       const loops = 21;
       player.blink({
         duration: 3,
