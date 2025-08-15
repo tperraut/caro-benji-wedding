@@ -46,6 +46,7 @@ loadSound("tutu_verstapen", "sounds/tutu_verstapen.ogg");
 loadSound("vehicle_hit", "sounds/vehicle_hit.ogg");
 loadSound("scooter_engine", "sounds/scooter_engine.ogg");
 loadSound("scooter_acceleration", "sounds/scooter_acceleration.ogg");
+loadSound("jews", "sounds/jews.ogg");
 
 loadSprite("level3", "sprites/level_3.jpg", {singular: true});
 loadSprite("level3BG", "sprites/level_3_bg.jpg", {singular: true});

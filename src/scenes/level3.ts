@@ -212,12 +212,19 @@ function drawSoundTrigger(path: Vec2[], sound: string) {
   if (path.length < 2) {
     return;
   }
+  let isPlaying = false;
   const s = add([
     area({shape: new Polygon(path)}),
     rotate(),
     "sound_trigger",
     {
-      playSound: () => play(sound, {volume: VOLUME_DEFAULT})
+      playSound: () => {
+        if (isPlaying) return;
+        isPlaying = true;
+        play(sound, {volume: VOLUME_DEFAULT}).onEnd(() => {
+          isPlaying = false;
+        });
+      }
     }
   ]);
   return s;
@@ -1056,6 +1063,7 @@ export function createLevel3Scene() {
     ])
 
     drawSoundTrigger([vec2(4617.688, 233.771), vec2(5089.318, 223.548), vec2(5148.324, 365.833), vec2(4709.335, 378.806)], "tutu_verstapen")
+    drawSoundTrigger([vec2(4305.238, 993.398), vec2(4313.127, 1226.723), vec2(4312.520, 1428.493), vec2(4058.260, 1479.163), vec2(3734.821, 1634.814), vec2(3621.951, 1709.150), vec2(3388.323, 1704.599), vec2(3395.605, 1532.564), vec2(3398.032, 1362.349), vec2(3190.494, 1354.980), vec2(3191.101, 1105.877), vec2(3342.201, 942.337), vec2(3677.776, 950.530)], "jews")
 
     drawPoliceMan(
       [vec2(254.543, 2208.894), vec2(254.190, 2087.616), vec2(644.818, 2088.007), vec2(644.994, 2213.516)],
@@ -1097,10 +1105,10 @@ export function createLevel3Scene() {
       });
     }
 
+    player.onCollide("sound_trigger", (obj: GameObj<{playSound: () => void}>) => {
+      obj.playSound()
+    });
     if (ENABLE_COLLISION) {
-      player.onCollide("sound_trigger", (obj: GameObj<{playSound: () => void}>) => {
-        obj.playSound()
-      });
 
       player.onCollide("people", () => {
         onEnnemiHit(["ela", "mo-joenge-toch"]);
