@@ -428,7 +428,7 @@ export function createLevel3Scene() {
         countdownTime = 0;
         idlePlayerSoundPlayer.stop();
         movingPlayerSoundPlayer.stop();
-        LOSE_AUDIO_PLAYER = play("game_over");
+        LOSE_AUDIO_PLAYER = play("game_over", {volume: VOLUME_DEFAULT});
         go("instructions", {asset: "game_over", sceneToGo: "level3", animateToNext: false, tapText: "Tap to retry"});
         return;
       }
@@ -1276,7 +1276,7 @@ export function createLevel3Scene() {
       player.onCollide("kebab", (obj) => {
         if (!player.isReady) return;
         obj.destroy();
-        play("kebab");
+        play("kebab", {volume: VOLUME_DEFAULT});
         player.speed += 25;
         maxSpeedText.text = `Max Speed: ${calculateShownSpeed(player.speed)}`;
       });
@@ -1285,7 +1285,7 @@ export function createLevel3Scene() {
         if (!player.isReady) return;
         idlePlayerSoundPlayer.stop();
         movingPlayerSoundPlayer.stop();
-        WIN_AUDIO_PLAYER = play("game_win");
+        WIN_AUDIO_PLAYER = play("game_win", {volume: VOLUME_DEFAULT});
         go("instructions", {asset: "game_win", sceneToGo: "level3", animateToNext: false, isEnd: true});
       })
     }
