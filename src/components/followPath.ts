@@ -8,11 +8,12 @@ interface FollowPathProps {
   offsetY?: number;
   destroyOnLast?: boolean;
   pauseDelay?: number;
-  onMove?: (self: GameObj<PosComp | SpriteComp | RotateComp | AreaComp | AnimateComp | {speed?: number, isPaused: boolean}>, lastPos: Vec2, targetPos: Vec2, angle?: number) => void;
+  onMove?: (self: GameObj, lastPos: Vec2, targetPos: Vec2, angle?: number) => void;
 }
 
 export function followPath({path, startI = 0, speed = 100, controlAngle = true, offsetY = 0, destroyOnLast = false, pauseDelay = 0, onMove}: FollowPathProps): Comp {
   let i = startI;
+  let lastTargetPos: Vec2 | null = null;
   let targetPos = path[i];
   let requires = ["pos"];
 
@@ -24,10 +25,9 @@ export function followPath({path, startI = 0, speed = 100, controlAngle = true, 
     id: "followPath",
     require: requires,
     update(this: GameObj<PosComp | SpriteComp | RotateComp | AreaComp | AnimateComp | {speed?: number, isPaused: boolean}>) {
-      const lastPos = this.pos;
       let dist = this.pos.dist(targetPos);
 
-      if (dist < 1 && !this.isPaused) {
+      if (dist < 1) {
         if (!this.isPaused && pauseDelay > 0) {
           this.isPaused = true;
           wait(pauseDelay, () => {
@@ -40,6 +40,7 @@ export function followPath({path, startI = 0, speed = 100, controlAngle = true, 
           return;
         }
         i = (i + 1) % path.length;
+        lastTargetPos = targetPos;
         targetPos = path[i];
 
         if (controlAngle) {
@@ -59,7 +60,10 @@ export function followPath({path, startI = 0, speed = 100, controlAngle = true, 
           this.angle = angle;
         }
       }
-      onMove?.(this, lastPos, targetPos, this.angle);
+      if (this.isPaused) {
+        return;
+      }
+      onMove?.(this, lastTargetPos, targetPos, this.angle);
       this.moveTo(targetPos, this.speed || speed);
     }
   };

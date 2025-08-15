@@ -106,8 +106,8 @@ function drawPeople(peopleSpawns: {door: Vec2, road: Vec2}[]) {
     body({isStatic: true}),
     outline(3, rgb(255, 0, 0), IS_DEBUG ? 1 : 0),
     followPath({
-      path: path, controlAngle: false, destroyOnLast: true, onMove(self, lastPos, targetPos, _) {
-        self.flipX = targetPos.x > lastPos.x;
+      path: path, controlAngle: false, destroyOnLast: true, onMove(self, lastTargetPos, targetPos, _) {
+        self.flipX = targetPos.x > lastTargetPos.x;
       },
     }),
     "people",
@@ -129,7 +129,7 @@ function drawJew(path: Vec2[]) {
   const p = add([
     pos(path[start]),
     sprite(jewAssets[randi(jewAssets.length)]),
-    scale(0.1, 0.1),
+    scale(0.07, 0.07),
     anchor("center"),
     area({collisionIgnore: ["hole", "road", "kebab", "people"]}),
     body({isStatic: true}),
@@ -139,13 +139,23 @@ function drawJew(path: Vec2[]) {
       startI: start,
       path: path,
       controlAngle: false,
-      pauseDelay: 3,
+      pauseDelay: 2,
+      onMove(self, lastTargetPos, targetPos, angle) {
+        (self as unknown as AnimateComp).animation.paused = self.isPaused;
+      }
     }),
     "people",
     {speed: 50, isPaused: false}
   ]);
 
   (p as unknown as AnimateComp).animate("angle", [-10, 10], {duration: 0.2, direction: "ping-pong"});
+  p.onUpdate(() => {
+    if (p.isPaused) {
+      p.angle = 0;
+      return;
+    }
+    (p as unknown as AnimateComp).animation.paused = p.isPaused;
+  });
 
   return p;
 }
