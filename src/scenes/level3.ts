@@ -353,7 +353,6 @@ function drawPoliceMan(triggerPositions: Vec2[], spritePos: Vec2) {
 
 export function createLevel3Scene() {
   return scene("level3", () => {
-    setCamScale(2)
     WIN_AUDIO_PLAYER?.stop();
     LOSE_AUDIO_PLAYER?.stop();
     debug.inspect = IS_DEBUG;
