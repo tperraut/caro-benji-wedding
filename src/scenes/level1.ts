@@ -25,20 +25,23 @@ function updateSpeed() {
 
 export function createLevel1Scene() {
   return scene("level1", () => {
+
+    const winCondition = 15;
     let score = 0
 
     add([pos(0, 0), rect(width(), height()), color("#FFFFFF")])
     add(["background", sprite("level1BG"), scale(0.5)])
     add(["ground", rect(3 * width(), 20), body({isStatic: true}), pos(-width(), height() - 20), area(), color("#FF0000"), opacity(0)])
-    const scoreboard = add([text(`Score: ${score}`), color("#000000"), pos(16, 16)])
+    const scoreboard = add([text(`Score: ${score} / ${winCondition}`), color("#000000"), pos(16, 16)])
 
     const despawner = add(["despawner", rect(20, 3 * height()), body({isStatic: true}), pos(-100, -height()), area(), color("#FF0000"), opacity(0)])
     despawner.onCollide("ennemi", (obj) => {
       obj.destroy();
       if (obj.hit) return;
       score++;
-      scoreboard.text = `Score: ${score}`;
-      if (score >= 15) {
+
+      scoreboard.text = `Score: ${score} / ${winCondition}`;
+      if (score >= winCondition) {
         go("instructions", {asset: "level2", sceneToGo: "level2"});
       }
     });

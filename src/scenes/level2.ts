@@ -20,12 +20,13 @@ function spawnEnnemis() {
 export function createLevel2Scene() {
   return scene("level2", () => {
     setGravity(0);
+    const winCondition = 60;
     score = 0;
 
     add([pos(0, 0), rect(width(), height()), color("#FFFFFF")])
     add(["background", sprite("level2BG"), scale(0.5)])
     add(["ground", rect(3 * width(), 20), body({isStatic: true}), pos(-width(), height()), area(), color("#FF0000"), opacity(0)])
-    const scoreboard = add([text(`Score: ${score}`), color("#000000"), pos(16, 16)])
+    const scoreboard = add([text(`Score: ${score} / ${winCondition}`), color("#000000"), pos(16, 16)])
 
     const despawner = add(["despawner", rect(3 * width(), 20), body({isStatic: true}), pos(-width(), height() + 100), area(), color("#FF0000"), opacity(0)])
     despawner.onCollide((obj) => {
@@ -39,7 +40,7 @@ export function createLevel2Scene() {
           obj.destroy();
           player.scale = vec2(clamp(player.scale.x - 0.1, 0.2, player.scale.x), clamp(player.scale.y - 0.1, 0.2, player.scale.y));
           score = clamp(score - 5, 0, score);
-          scoreboard.text = `Score: ${score}`;
+          scoreboard.text = `Score: ${score} / ${winCondition}`;
         }
       }
     )
@@ -54,8 +55,8 @@ export function createLevel2Scene() {
       obj.destroy();
       play("eat", {volume: 0.5});
       score++;
-      scoreboard.text = `Score: ${score}`;
-      if (score >= 60) {
+      scoreboard.text = `Score: ${score} / ${winCondition}`;
+      if (score >= winCondition) {
         go("instructions", {asset: "level3", sceneToGo: "level3"});
       }
     })

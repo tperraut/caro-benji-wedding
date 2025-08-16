@@ -5,6 +5,7 @@ interface InstructionsSceneProps {
   tapText?: string;
   isEnd?: boolean;
   duration?: number;
+  extra?: InstructionsSceneProps;
 }
 
 export function createInstructionsScene() {
@@ -15,6 +16,7 @@ export function createInstructionsScene() {
     tapText = "Tap to start",
     isEnd = false,
     duration = 7,
+    extra = {}
   }: InstructionsSceneProps) => {
     add([pos(0, 0), rect(width(), height()), color("#FFFFFF")])
     const bg = add([sprite(asset), animate(), scale(0.5)])
@@ -40,13 +42,13 @@ export function createInstructionsScene() {
     t.animate("opacity", [0.5, 1, 0.5], {duration: 2})
 
     onKeyPress("space", () => {
-      go(sceneToGo, {});
+      go(sceneToGo, extra);
     });
     onClick(() => {
-      go(sceneToGo, {});
+      go(sceneToGo, extra);
     });
     onTouchStart(() => {
-      go(sceneToGo, {});
+      go(sceneToGo, extra);
     });
   });
 }

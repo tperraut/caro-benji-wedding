@@ -8,7 +8,7 @@ export function createPlayer({idle, jump, hit, p, anch, onEnnemiHit}: {idle: str
     scale(vec2(0.2, 0.2)),
     pos(p.x, p.y),
     anchor(anch ?? "botleft"),
-    area(),
+    area({scale: vec2(0.95, 0.95)}),
     animate(),
     body({jumpForce: 700}),
     blink(),
