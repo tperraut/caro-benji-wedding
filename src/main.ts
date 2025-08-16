@@ -47,6 +47,7 @@ loadSound("vehicle_hit", "sounds/vehicle_hit.ogg");
 loadSound("scooter_engine", "sounds/scooter_engine.ogg");
 loadSound("scooter_acceleration", "sounds/scooter_acceleration.ogg");
 loadSound("jews", "sounds/jews.ogg");
+loadSound("mayer", "sounds/mayer_sound.ogg");
 
 loadSprite("level3", "sprites/level_3.jpg", {singular: true});
 if (isTouchscreen()) {
@@ -74,7 +75,6 @@ loadSprite("hole", "sprites/hole.png", {singular: true});
 loadSprite("benji", "sprites/benjimoto.png", {singular: true});
 loadSprite("game_over", "sprites/game_over.jpg", {singular: true});
 loadSprite("game_win", "sprites/game_win.jpg", {singular: true});
-loadSprite("water", "sprites/water.png", {singular: true});
 loadSprite("policeman", "sprites/policeman.png", {
   sliceX: 4,
   sliceY: 4,
