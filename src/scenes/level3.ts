@@ -526,7 +526,7 @@ export function createLevel3Scene() {
 
     let isMoving = false;
     let targetPos = vec2(0, 0);
-    let countdownTime = 180; // 3 minutes
+    let countdownTime = 150; // 2 minutes 30 seconds
 
     setGravity(0);
 
