@@ -9,6 +9,7 @@ interface FollowPathProps {
   destroyOnLast?: boolean;
   pauseDelay?: number;
   flipX?: boolean;
+  pauseAt?: Vec2[];
   onMove?: (self: GameObj, lastPos: Vec2, targetPos: Vec2, angle?: number) => void;
 }
 
@@ -19,11 +20,12 @@ interface FollowPathComp extends Comp {
   id: string;
 }
 
-export function followPath({path, startI = 0, speed = 100, controlAngle = true, offsetY = 0, destroyOnLast = false, pauseDelay = 0, flipX = true, onMove}: FollowPathProps): FollowPathComp {
+export function followPath({path, startI = 0, speed = 100, controlAngle = true, offsetY = 0, destroyOnLast = false, pauseDelay = 0, flipX = true, pauseAt, onMove}: FollowPathProps): FollowPathComp {
   let i = startI;
   let lastTargetPos: Vec2 | null = null;
   let targetPos = path[i];
   let requires = ["pos"];
+  let lastPausePos: Vec2 | null = null;
 
   if (controlAngle) {
     requires.push("rotate", "sprite", "area");
@@ -35,14 +37,20 @@ export function followPath({path, startI = 0, speed = 100, controlAngle = true, 
     update(this: GameObj<PosComp | SpriteComp | RotateComp | AreaComp | AnimateComp | {speed?: number, isPaused: boolean}>) {
       let dist = this.pos.dist(targetPos);
 
-      if (dist < 1) {
-        if (!this.isPaused && pauseDelay > 0) {
+      if (!this.isPaused && pauseDelay > 0 && pauseAt) {
+        for (const pausePoint of pauseAt) {
+          if (lastPausePos === pausePoint || this.pos.dist(pausePoint) > 1) continue;
+
+          lastPausePos = pausePoint;
           this.isPaused = true;
           wait(pauseDelay, () => {
             this.isPaused = false;
           });
+          break;
         }
+      }
 
+      if (dist < 1) {
         if (destroyOnLast && i == path.length - 1) {
           this.destroy();
           return;

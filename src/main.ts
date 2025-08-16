@@ -85,6 +85,20 @@ loadSprite("policeman", "sprites/policeman.png", {
 loadSprite("shalom1", "sprites/shalom1.png", {singular: true});
 loadSprite("shalom2", "sprites/shalom2.png", {singular: true});
 loadSprite("boat", "sprites/boat.png", {singular: true});
+loadSprite("uber1", "sprites/uber_1.png", {singular: true});
+loadSprite("uber2", "sprites/uber_2.png", {singular: true});
+loadSprite("trott1", "sprites/trott_1.png", {singular: true});
+loadSprite("trott2", "sprites/trott_2.png", {singular: true});
+loadSprite("trott3", "sprites/trott_3.png", {singular: true});
+loadSprite("shopping1", "sprites/shopping_1.png", {singular: true});
+loadSprite("shopping2", "sprites/shopping_2.png", {singular: true});
+loadSprite("shopping3", "sprites/shopping_3.png", {singular: true});
+loadSprite("shopping4", "sprites/shopping_4.png", {singular: true});
+loadSprite("old_girl1", "sprites/old_girl_1.png", {singular: true});
+loadSprite("old_girl2", "sprites/old_girl_2.png", {singular: true});
+loadSprite("old_boy1", "sprites/old_boy_1.png", {singular: true});
+loadSprite("old_boy2", "sprites/old_boy_2.png", {singular: true});
+loadSprite("tourist", "sprites/tourist.png", {singular: true});
 
 setGravity(1000);
 createInstructionsScene();
@@ -93,5 +107,5 @@ createLevel2Scene();
 createLevel3Scene();
 
 // go("instructions", {asset: "startBG", sceneToGo: "instructions", animateToNext: false});
-go("instructions", {asset: "startBG", sceneToGo: "level3", animateToNext: false});
+go("instructions", {asset: "level3", sceneToGo: "level3", animateToNext: false});
 // go("level2");
