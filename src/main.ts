@@ -99,6 +99,7 @@ loadSprite("old_girl2", "sprites/old_girl_2.png", {singular: true});
 loadSprite("old_boy1", "sprites/old_boy_1.png", {singular: true});
 loadSprite("old_boy2", "sprites/old_boy_2.png", {singular: true});
 loadSprite("tourist", "sprites/tourist.png", {singular: true});
+loadSprite("ponton", "sprites/ponton.png", {singular: true});
 
 setGravity(1000);
 createInstructionsScene();

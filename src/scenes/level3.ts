@@ -90,6 +90,7 @@ function drawBike(path: Vec2[]) {
     area({collisionIgnore: IGNORE_LIST}),
     body({isStatic: true}),
     rotate(),
+    z(2),
     followPath({
       path: path, offsetY: 80
     }),
@@ -117,6 +118,7 @@ function drawUber({path, pauseAt}: UberProps) {
     area({collisionIgnore: IGNORE_LIST}),
     body({isStatic: true}),
     rotate(),
+    z(2),
     followPath({
       path: path,
       pauseDelay: randi(3, 10),
@@ -156,6 +158,7 @@ function drawTrott({path, pauseAt}: TrottProps) {
       destroyOnLast: true,
       flipX: _type === "trott2" ? false : true,
     }),
+    z(2),
     {
       isPaused: false,
       speed: 70
@@ -190,6 +193,7 @@ function drawOldPeople({path, pauseAt, types = OLD_TYPES, speed = 15, destroyOnL
     body({isStatic: true}),
     rotate(),
     animate(),
+    z(2),
     followPath({
       path: path,
       pauseDelay: randi(3, 10),
@@ -325,10 +329,10 @@ function drawJew(path: Vec2[]) {
 }
 
 const VEHICLE_DATA = {
-  "sport_car": {speed: 250, zIndex: 1},
-  "car": {speed: 150, zIndex: 2},
-  "camion_red": {speed: 100, zIndex: 3},
-  "camion_white": {speed: 100, zIndex: 3}
+  "sport_car": {speed: 250, zIndex: 10},
+  "car": {speed: 150, zIndex: 20},
+  "camion_red": {speed: 100, zIndex: 30},
+  "camion_white": {speed: 100, zIndex: 30}
 };
 const VEHICLE_TYPES = ["sport_car", "car", "camion_red", "camion_white"];
 
@@ -412,7 +416,7 @@ function drawBoat({path, takeArea, dropPoint, stops}: BoatProps) {
     }),
     z(999),
     "boat",
-    {speed: 80, isPaused: false}
+    {speed: 100, isPaused: false}
   ]);
   b.area.shape = new Rect(vec2(0, 0), b.width, b.height + 500);
 
@@ -549,6 +553,7 @@ export function createLevel3Scene() {
       anchor("center"),
       rotate(),
       blink(),
+      z(2),
       {
         speed: PLAYER_DEFAULT_SPEED,
         lastGoodPos: startPos,
@@ -1507,8 +1512,8 @@ export function createLevel3Scene() {
         vec2(1122.360, -56.136), vec2(1157.092, 77.931), vec2(1198.076, 228.669), vec2(1261.984, 399.551), vec2(1278.655, 499.928), vec2(1217.527, 641.288), vec2(1161.260, 783.343), vec2(1102.215, 924.703), vec2(1009.138, 1048.868), vec2(930.921, 1185.581), vec2(850.698, 1322.294), vec2(731.701, 1406.194), vec2(610.030, 1495.442), vec2(481.803, 1596.138), vec2(349.436, 1696.082), vec2(232.646, 1745.218), vec2(126.351, 1806.388), vec2(28.078, 1848.171), vec2(37.437, 2035.023), vec2(197.883, 1938.422), vec2(404.457, 1816.416), vec2(598.329, 1695.748), vec2(807.577, 1563.714), vec2(955.320, 1417.642), vec2(1093.705, 1253.519), vec2(1193.315, 1091.402), vec2(1269.413, 924.123), vec2(1336.933, 754.652), vec2(1389.747, 579.833), vec2(1401.780, 409.694), vec2(1370.988, 239.457), vec2(1318.843, 76.462), vec2(1288.759, -32.507)
       ],
       takeArea: [vec2(1398.661, 895.738), vec2(1339.162, 1014.401), vec2(1427.407, 1062.869), vec2(1478.215, 964.930)],
-      dropPoint: vec2(964.120, 948.552),
-      stops: [[vec2(1384.427, 768.603), vec2(1460.458, 795.286), vec2(1469.926, 768.029), vec2(1407.093, 739.625)], [vec2(972.466, 1048.343), vec2(954.965, 1074.452), vec2(926.561, 1057.524), vec2(940.619, 1030.267)]]
+      dropPoint: vec2(954.120, 930.552),
+      stops: [[vec2(1384.427, 798.603), vec2(1460.458, 825.286), vec2(1469.926, 798.029), vec2(1407.093, 769.625)], [vec2(972.466, 1048.343), vec2(954.965, 1074.452), vec2(926.561, 1057.524), vec2(940.619, 1030.267)]]
     });
 
     drawWater([
@@ -1519,6 +1524,22 @@ export function createLevel3Scene() {
       vec2(887.150, 870.555), vec2(857.007, 725.304), vec2(827.921, 581.463), vec2(873.224, 471.114), vec2(958.718, 434.448), vec2(1021.296, 464.415),
       vec2(1071.888, 503.196), vec2(1103.089, 552.906), vec2(1094.098, 626.237), vec2(1072.769, 707.324), vec2(1050.735, 789.116), vec2(1027.995, 869.498)
     ])
+
+    add([
+      pos(vec2(1372.709, 954.588)),
+      sprite("ponton", {flipY: true}),
+      anchor("center"),
+      rotate(-65),
+      z(1)
+    ]);
+
+    add([
+      pos(vec2(996.191, 941.278)),
+      sprite("ponton", {flipY: true}),
+      anchor("center"),
+      rotate(120),
+      z(1)
+    ]);
 
     function onEnnemiHit(sound: string[] = ["hit"]) {
       if (!player.isReady) {
