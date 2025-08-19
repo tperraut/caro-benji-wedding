@@ -606,7 +606,7 @@ export function createLevel3Scene() {
         idlePlayerSoundPlayer.stop();
         movingPlayerSoundPlayer.stop();
         LOSE_AUDIO_PLAYER = play("game_over", {volume: VOLUME_DEFAULT});
-        go("instructions", {asset: "game_over", sceneToGo: "instructions", animateToNext: false, tapText: "Tap to retry", extra: {asset: "level3", sceneToGo: "level3", duration: 5}});
+        go("instructions", {asset: "game_over", sceneToGo: "instructions", animateToNext: false, tapText: "Tap to retry", extra: {asset: "level3", sceneToGo: "level3", duration: 7}});
         return;
       }
       timerText.text = formatTime(Math.max(0, countdownTime));

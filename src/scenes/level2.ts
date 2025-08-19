@@ -57,7 +57,7 @@ export function createLevel2Scene() {
       score++;
       scoreboard.text = `Score: ${score} / ${winCondition}`;
       if (score >= winCondition) {
-        go("instructions", {asset: "level3", sceneToGo: "level3"});
+        go("instructions", {asset: "level3", sceneToGo: "level3", duration: 10});
       }
     })
 
